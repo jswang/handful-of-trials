@@ -40,5 +40,8 @@ if __name__ == "__main__":
     parser.add_argument('-logdir', type=str, default='log',
                         help='Directory to which results will be logged (default: ./log)')
     args = parser.parse_args()
-
+    print(args.ctrl_arg)
+    print(args.override)
     main(args.env, "MPC", args.ctrl_arg, args.override, args.logdir)
+
+# main('cartpole', "MPC", [['D', 'E']], [], './log')

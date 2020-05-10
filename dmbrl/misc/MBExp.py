@@ -89,18 +89,23 @@ class MBExperiment:
             traj_acs.append(samples[-1]["ac"])
             traj_rews.append(samples[-1]["rewards"])
 
+        # jsw: "Initialize data D with a random controller for one trial"
         if self.ninit_rollouts > 0:
+            # jsw this trains the NN model for the very first time
+            # policy is of type Controller, which MPC inherits from
             self.policy.train(
                 [sample["obs"] for sample in samples],
                 [sample["ac"] for sample in samples],
                 [sample["rewards"] for sample in samples]
             )
 
-        # Training loop
+        # Training loop:
+        # jsw: "for Trial k = 1 to K do:"
         for i in range(self.ntrain_iters):
             print("####################################################################")
             print("Starting training iteration %d." % (i + 1))
 
+            # jsw note that NN model trained above, initialized with action from a random policy
             iter_dir = os.path.join(self.logdir, "train_iter%d" % (i + 1))
             os.makedirs(iter_dir, exist_ok=True)
 
@@ -115,8 +120,15 @@ class MBExperiment:
             if self.nrecord > 0:
                 for item in filter(lambda f: f.endswith(".json"), os.listdir(iter_dir)):
                     os.remove(os.path.join(iter_dir, item))
+
+
+            # jsw: actually executing action from optimal actions, log it
+            # sample() calls Agent.py's sample which gets the best action from the policy, and
+            # uses the environment to see what happens when you use that action. it repeats
+            # this for the entire horizon. Actually exploring the true environment
             for j in range(max(self.neval, self.nrollouts_per_iter) - self.nrecord):
                 samples.append(
+                    # jsw for time t = 0 to task horizon
                     self.agent.sample(
                         self.task_hor, self.policy
                     )
