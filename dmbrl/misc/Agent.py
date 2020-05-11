@@ -58,9 +58,11 @@ class Agent:
                 recorder.capture_frame()
             start = time.time()
             # jsw: at this time in the horizon, get an action from the policy.
+            print("time horizon {}, running MPC".format(t))
+            # jsw: .act() is MPC actually solving limited time optimal control problem
+            # for best action given past info and it's planning horizon (plan_hor)
             A.append(policy.act(O[t], t))
             times.append(time.time() - start)
-
             if self.noise_stddev is None:
                 # jsw Using environment to actually step the obs, reward, and info
                 obs, reward, done, info = self.env.step(A[t])
