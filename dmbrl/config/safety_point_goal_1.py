@@ -1,5 +1,17 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+
+import numpy as np
+import tensorflow as tf
+from dotmap import DotMap
 import gym
 import safety_gym
+
+from dmbrl.misc.DotmapUtils import get_required_argument
+from dmbrl.modeling.layers import FC
+import dmbrl.env
+
 
 class SafetyPointGoal1ConfigModule:
     ENV_NAME = 'Safexp-PointGoal1-v0'
@@ -35,7 +47,7 @@ class SafetyPointGoal1ConfigModule:
     # These appear to be additional functions needed by MPC and GP
     # copied from half cheetah
 
-    @staticmethod
+    # @staticmethod
     # this seems to be taking the observations from the env and taking the sin and cos of them for MPC
     # not entirely sure, and it's optional, so ignore for now.
     # def obs_preproc(obs):
