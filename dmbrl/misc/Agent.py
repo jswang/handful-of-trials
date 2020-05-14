@@ -24,6 +24,7 @@ class Agent:
                     action noise if params.noisy_actions is True.
         """
         self.env = params.env
+
         self.noise_stddev = params.noise_stddev if params.get("noisy_actions", False) else None
 
         if isinstance(self.env, DotMap):

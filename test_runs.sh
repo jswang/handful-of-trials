@@ -8,7 +8,6 @@ python scripts/mbexp.py -env cartpole -ca model-type P -ca prop-type DS -ca opt-
 # #1 + task horizon is only 5 (i/o 200), so you dont move around in the environment much.
 python scripts/mbexp.py -env cartpole -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5
 
-
 # Fastest run!!!! Use this one to run really quick
 # #1 + task horizon is only 5, MPC planning horizon is only 5 (i/o 25)
 python scripts/mbexp.py -env cartpole -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
