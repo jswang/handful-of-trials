@@ -12,6 +12,15 @@ python scripts/mbexp.py -env cartpole -ca model-type P -ca prop-type DS -o exp_c
 # #1 + task horizon is only 5, MPC planning horizon is only 5 (i/o 25)
 python scripts/mbexp.py -env cartpole -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
 
+# Running with safety point goal 1
+python scripts/mbexp.py -env safety_point_goal_1 -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
+
+python scripts/mbexp.py -env safety_point_goal_1 -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 200 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
+
+python scripts/mbexp.py -env safety_point_goal_1 -o exp_cfg.exp_cfg.ntrain_iters 200 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
+
+python scripts/mbexp.py -env safety_point_goal_1
+
 #Notes
 # planning horizon vs. task horizon?
 # planning horizon is how far in advance MPC plans for
