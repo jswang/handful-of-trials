@@ -15,30 +15,30 @@ import dmbrl.env
 
 class SafetyPointGoal1ConfigModule:
     ENV_NAME = 'Safexp-PointGoal1-v0'
-    # copied from cartpole
-    TASK_HORIZON = 200
-    NTRAIN_ITERS = 50
+    # copied from half cheetah
+    TASK_HORIZON = 1000
+    NTRAIN_ITERS = 300
     NROLLOUTS_PER_ITER = 1
-    PLAN_HOR = 25
+    PLAN_HOR = 30
     # 60 state points, 2 action points
     MODEL_IN, MODEL_OUT = 62, 60
-    GP_NINDUCING_POINTS = 200
+    GP_NINDUCING_POINTS = 300
 
     def __init__(self):
         self.ENV = gym.make(self.ENV_NAME)
 
-        # copied from cartpole
+        # copied from half cheetah
         cfg = tf.ConfigProto()
         cfg.gpu_options.allow_growth = True
-        self.SESS = tf.Session(config=cfg)
+        self.SESS =  tf.compat.v1.Session(config=cfg)
         self.NN_TRAIN_CFG = {"epochs": 5}
         self.OPT_CFG = {
             "Random": {
-                "popsize": 2000
+                "popsize": 2500
             },
             "CEM": {
-                "popsize": 400,
-                "num_elites": 40,
+                "popsize": 500,
+                "num_elites": 50,
                 "max_iters": 5,
                 "alpha": 0.1
             }
