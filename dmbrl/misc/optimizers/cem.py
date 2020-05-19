@@ -22,7 +22,7 @@ class CEMOptimizer(Optimizer):
             popsize (int): The number of candidate solutions to be sampled at every iteration
             num_elites (int): The number of top solutions that will be used to obtain the distribution
                 at the next iteration.
-            tf_session (tf.Session): (optional) Session to be used for this optimizer. Defaults to None,
+            tf_session ( tf.compat.v1.Session): (optional) Session to be used for this optimizer. Defaults to None,
                 in which case any functions passed in cannot be tf.Tensor-valued.
             upper_bound (np.array): An array of upper bounds
             lower_bound (np.array): An array of lower bounds

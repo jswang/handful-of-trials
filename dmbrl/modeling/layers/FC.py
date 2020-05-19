@@ -87,7 +87,7 @@ class FC:
         """Returns a Layer object with the same parameters as this layer.
 
         Arguments:
-            sess: (tf.Session/None) session containing the current values of the variables to be copied.
+            sess: ( tf.compat.v1.Session/None) session containing the current values of the variables to be copied.
                   Must be passed in to copy values.
             copy_vals: (bool) Indicates whether variable values will be copied over.
                        Ignored if the variables of this layer has not yet been constructed.
