@@ -1,4 +1,7 @@
 .idea
 tags
 *.pyc
-log/
+.vscode
+__init__.py
+dmbrl/__init__.py
+hand_venv
