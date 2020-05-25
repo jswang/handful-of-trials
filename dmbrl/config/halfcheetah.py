@@ -10,10 +10,12 @@ import gym
 from dmbrl.misc.DotmapUtils import get_required_argument
 from dmbrl.modeling.layers import FC
 import dmbrl.env
+from gym.envs.mujoco import mujoco_env
 
 
 class HalfCheetahConfigModule:
     ENV_NAME = "MBRLHalfCheetah-v0"
+    # ENV_NAME = "HalfCheetah-v2"
     TASK_HORIZON = 1000
     NTRAIN_ITERS = 300
     NROLLOUTS_PER_ITER = 1
@@ -27,15 +29,15 @@ class HalfCheetahConfigModule:
         self.ENV = gym.make(self.ENV_NAME)
         cfg = tf.ConfigProto()
         cfg.gpu_options.allow_growth = True
-        self.SESS = tf.Session(config=cfg)
+        self.SESS = tf.compat.v1.Session(config=cfg)
         self.NN_TRAIN_CFG = {"epochs": 5}
         self.OPT_CFG = {
             "Random": {
                 "popsize": 2500
             },
             "CEM": {
-                "popsize": 500,
-                "num_elites": 50,
+                "popsize": 500, # number of action sequences that you are sampling
+                "num_elites": 50, # best 50 of those action sequences
                 "max_iters": 5,
                 "alpha": 0.1
             }

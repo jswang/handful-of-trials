@@ -116,6 +116,7 @@ class CEMOptimizer(Optimizer):
             )
         else:
             mean, var, t = init_mean, init_var, 0
+            # X is a multivariate truncated normal
             X = stats.truncnorm(-2, 2, loc=np.zeros_like(mean), scale=np.ones_like(mean))
 
             while (t < self.max_iters) and np.max(var) > self.epsilon:

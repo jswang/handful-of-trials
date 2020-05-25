@@ -14,6 +14,7 @@ import dmbrl.env
 
 class CartpoleConfigModule:
     ENV_NAME = "MBRLCartpole-v0"
+    # ENV_NAME = "CartPole-v1"
     TASK_HORIZON = 200
     NTRAIN_ITERS = 50
     NROLLOUTS_PER_ITER = 1
@@ -25,7 +26,7 @@ class CartpoleConfigModule:
         self.ENV = gym.make(self.ENV_NAME)
         cfg = tf.ConfigProto()
         cfg.gpu_options.allow_growth = True
-        self.SESS = tf.Session(config=cfg)
+        self.SESS = tf.compat.v1.Session(config=cfg)
         self.NN_TRAIN_CFG = {"epochs": 5}
         self.OPT_CFG = {
             "Random": {

@@ -178,6 +178,7 @@ class MPC(Controller):
         self.train_targs = np.concatenate([self.train_targs] + new_train_targs, axis=0)
 
         # Train the model (jsw: training neural network models)
+        print("MPC train")
         self.model.train(self.train_in, self.train_targs, **self.model_train_cfg)
         self.has_been_trained = True
 

@@ -154,14 +154,14 @@ class BNN:
 
         # Construct all variables.
         with self.sess.as_default():
-            with tf.variable_scope(self.name):
+            with tf.compat.v1.variable_scope(self.name):
                 self.scaler = TensorStandardScaler(self.layers[0].get_input_dim())
                 self.max_logvar = tf.Variable(np.ones([1, self.layers[-1].get_output_dim() // 2])/2., dtype=tf.float32,
                                               name="max_log_var")
                 self.min_logvar = tf.Variable(-np.ones([1, self.layers[-1].get_output_dim() // 2])*10., dtype=tf.float32,
                                               name="min_log_var")
                 for i, layer in enumerate(self.layers):
-                    with tf.variable_scope("Layer%i" % i):
+                    with tf.compat.v1.variable_scope("Layer%i" % i):
                         layer.construct_vars()
                         self.decays.extend(layer.get_decays())
                         self.optvars.extend(layer.get_vars())
@@ -169,7 +169,7 @@ class BNN:
         self.nonoptvars.extend(self.scaler.get_vars())
 
         # Set up training
-        with tf.variable_scope(self.name):
+        with tf.compat.v1.variable_scope(self.name):
             self.optimizer = optimizer(**optimizer_args)
             self.sy_train_in = tf.placeholder(dtype=tf.float32,
                                               shape=[self.num_nets, None, self.layers[0].get_input_dim()],
@@ -188,7 +188,7 @@ class BNN:
         self.sess.run(tf.variables_initializer(self.optvars + self.nonoptvars + self.optimizer.variables()))
 
         # Set up prediction
-        with tf.variable_scope(self.name):
+        with tf.compat.v1.variable_scope(self.name):
             self.sy_pred_in2d = tf.placeholder(dtype=tf.float32,
                                                shape=[None, self.layers[0].get_input_dim()],
                                                name="2D_training_inputs")
@@ -235,7 +235,7 @@ class BNN:
         def shuffle_rows(arr):
             idxs = np.argsort(np.random.uniform(size=arr.shape), axis=-1)
             return arr[np.arange(arr.shape[0])[:, None], idxs]
-
+        print("training BNN")
         # Split into training and holdout sets
         num_holdout = min(int(inputs.shape[0] * holdout_ratio), max_logging)
         permutation = np.random.permutation(inputs.shape[0])

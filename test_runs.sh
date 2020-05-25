@@ -19,7 +19,11 @@ python scripts/mbexp.py -env safety_point_goal_1 -ca model-type P -ca prop-type 
 
 python scripts/mbexp.py -env safety_point_goal_1 -o exp_cfg.exp_cfg.ntrain_iters 200 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
 
+# Run vanilla PE-TS on safety point goal 1
 python scripts/mbexp.py -env safety_point_goal_1
+
+# Pretrain the neural network for 10 * 1000 times
+python scripts/mbexp.py -env safety_point_goal_1 -o exp_cfg.exp_cfg.ninit_rollouts 10
 
 #Notes
 # planning horizon vs. task horizon?

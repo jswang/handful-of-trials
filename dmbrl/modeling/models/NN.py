@@ -207,6 +207,7 @@ class NN:
             idxs = np.argsort(np.random.uniform(size=arr.shape), axis=-1)
             return arr[np.arange(arr.shape[0])[:, None], idxs]
 
+        print("Training NN")
         # Split into training and holdout sets
         num_holdout = min(int(inputs.shape[0] * holdout_ratio), max_logging)
         permutation = np.random.permutation(inputs.shape[0])
