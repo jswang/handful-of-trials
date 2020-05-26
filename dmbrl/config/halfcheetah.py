@@ -15,7 +15,6 @@ from gym.envs.mujoco import mujoco_env
 
 class HalfCheetahConfigModule:
     ENV_NAME = "MBRLHalfCheetah-v0"
-    # ENV_NAME = "HalfCheetah-v2"
     TASK_HORIZON = 1000
     NTRAIN_ITERS = 300
     NROLLOUTS_PER_ITER = 1

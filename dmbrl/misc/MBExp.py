@@ -95,7 +95,7 @@ class MBExperiment:
 
         # jsw: "Initialize data D with a random controller for one trial"
         if self.ninit_rollouts > 0:
-            print("Training in random actions")
+            print("Training on random actions")
             # jsw this trains the NN model for the very first time
             # policy is of type Controller, which MPC inherits from
             self.policy.train(

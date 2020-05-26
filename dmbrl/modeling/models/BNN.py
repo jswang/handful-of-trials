@@ -6,12 +6,14 @@ import os
 
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 from tqdm import trange
 from scipy.io import savemat, loadmat
 
 from dmbrl.modeling.utils import TensorStandardScaler
 from dmbrl.modeling.layers import FC
 from dmbrl.misc.DotmapUtils import *
+
 
 
 class BNN:
@@ -34,6 +36,7 @@ class BNN:
                 .sess ( tf.compat.v1.Session/None): The session that this model will use.
                     If None, creates a session with its own associated graph. Defaults to None.
         """
+        tf.set_random_seed(42)
         self.name = get_required_argument(params, 'name', 'Must provide name.')
         self.model_dir = params.get('model_dir', None)
 
@@ -213,6 +216,13 @@ class BNN:
                     var.load(params_dict[str(i)])
         self.finalized = True
 
+    def plot_train_val(self, train, val):
+        epoch, _ = train.shape
+        plt.plot(range(epoch), train[:, 0], label='train_NN0')
+        plt.plot(range(epoch), val[:, 0], label='val_NN0')
+        plt.show()
+        plt.close()
+
     #################
     # Model Methods #
     #################
@@ -235,7 +245,7 @@ class BNN:
         def shuffle_rows(arr):
             idxs = np.argsort(np.random.uniform(size=arr.shape), axis=-1)
             return arr[np.arange(arr.shape[0])[:, None], idxs]
-        print("training BNN")
+        print(f"training BNN, {epochs} epochs, holdout_ratio {holdout_ratio}")
         # Split into training and holdout sets
         num_holdout = min(int(inputs.shape[0] * holdout_ratio), max_logging)
         permutation = np.random.permutation(inputs.shape[0])
@@ -252,7 +262,10 @@ class BNN:
             epoch_range = range(epochs)
         else:
             epoch_range = trange(epochs, unit="epoch(s)", desc="Network training")
-        for _ in epoch_range:
+        train_losses = np.zeros((epochs, self.num_nets))
+        val_losses = np.zeros((epochs, self.num_nets))
+        for e in epoch_range:
+            # for every batch, run a forward/backward pass
             for batch_num in range(int(np.ceil(idxs.shape[-1] / batch_size))):
                 batch_idxs = idxs[:, batch_num * batch_size:(batch_num + 1) * batch_size]
                 self.sess.run(
@@ -260,34 +273,41 @@ class BNN:
                     feed_dict={self.sy_train_in: inputs[batch_idxs], self.sy_train_targ: targets[batch_idxs]}
                 )
             idxs = shuffle_rows(idxs)
+            # Print the progress using epoch_range, a progress bar printer
             if not hide_progress:
                 if holdout_ratio < 1e-12:
-                    epoch_range.set_postfix({
-                        "Training loss(es)": self.sess.run(
+                    t_losses = self.sess.run(
+                                self.mse_loss,
+                                feed_dict={
+                                    self.sy_train_in: inputs[idxs[:, :max_logging]],
+                                    self.sy_train_targ: targets[idxs[:, :max_logging]]
+                                }
+                            )
+                    epoch_range.set_postfix({ "Training loss(es)": t_losses})
+                    train_losses[e, :] = t_losses
+                else:
+                    t_losses= self.sess.run(
                             self.mse_loss,
                             feed_dict={
                                 self.sy_train_in: inputs[idxs[:, :max_logging]],
                                 self.sy_train_targ: targets[idxs[:, :max_logging]]
                             }
                         )
-                    })
-                else:
-                    epoch_range.set_postfix({
-                        "Training loss(es)": self.sess.run(
-                            self.mse_loss,
-                            feed_dict={
-                                self.sy_train_in: inputs[idxs[:, :max_logging]],
-                                self.sy_train_targ: targets[idxs[:, :max_logging]]
-                            }
-                        ),
-                        "Holdout loss(es)": self.sess.run(
+                    v_losses = self.sess.run(
                             self.mse_loss,
                             feed_dict={
                                 self.sy_train_in: holdout_inputs,
                                 self.sy_train_targ: holdout_targets
                             }
                         )
+                    train_losses[e, :] = t_losses
+                    val_losses[e, :] = v_losses
+                    epoch_range.set_postfix({
+                        "Training loss(es)": t_losses,
+                        "Holdout loss(es)": v_losses
                     })
+
+        self.plot_train_val(train_losses, val_losses)
 
     def predict(self, inputs, factored=False, *args, **kwargs):
         """Returns the distribution predicted by the model for each input vector in inputs.

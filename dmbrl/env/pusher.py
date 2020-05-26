@@ -16,7 +16,7 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         utils.EzPickle.__init__(self)
         self.reset_model()
 
-    def _step(self, a):
+    def step(self, a):
         obj_pos = self.get_body_com("object"),
         vec_1 = obj_pos - self.get_body_com("tips_arm")
         vec_2 = obj_pos - self.get_body_com("goal")
@@ -53,8 +53,8 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def _get_obs(self):
         return np.concatenate([
-            self.model.data.qpos.flat[:7],
-            self.model.data.qvel.flat[:7],
+            self.sim.data.qpos.flat[:7],
+            self.sim.data.qvel.flat[:7],
             self.get_body_com("tips_arm"),
             self.get_body_com("object"),
         ])

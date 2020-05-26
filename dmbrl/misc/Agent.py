@@ -54,7 +54,7 @@ class Agent:
         O, A, reward_sum, done = [self.env.reset()], [], 0, False
 
         policy.reset()
-        print(f"agent: horizon {horizon}, video_record: {video_record}")
+
         for t in range(horizon):
             if video_record:
                 recorder.capture_frame()

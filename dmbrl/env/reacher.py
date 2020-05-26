@@ -17,7 +17,7 @@ class Reacher3DEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.goal = np.zeros(3)
         mujoco_env.MujocoEnv.__init__(self, os.path.join(dir_path, 'assets/reacher3d.xml'), 2)
 
-    def _step(self, a):
+    def step(self, a):
         self.do_simulation(a, self.frame_skip)
         ob = self._get_obs()
         reward = -np.sum(np.square(self.get_EE_pos(ob[None]) - self.goal))
@@ -41,8 +41,8 @@ class Reacher3DEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def _get_obs(self):
         return np.concatenate([
-            self.model.data.qpos.flat,
-            self.model.data.qvel.flat[:-3],
+            self.sim.data.qpos.flat,
+            self.sim.data.qvel.flat[:-3],
         ])
 
     def get_EE_pos(self, states):
