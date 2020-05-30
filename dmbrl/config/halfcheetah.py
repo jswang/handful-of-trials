@@ -64,7 +64,7 @@ class HalfCheetahConfigModule:
         return np.concatenate([next_obs[:, :1], next_obs[:, 1:] - obs[:, 1:]], axis=1)
 
     @staticmethod
-    def obs_cost_fn(obs):
+    def obs_cost_fn(obs, _):
         return -obs[:, 0]
 
     @staticmethod

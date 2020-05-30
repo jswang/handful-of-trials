@@ -216,10 +216,12 @@ class BNN:
                     var.load(params_dict[str(i)])
         self.finalized = True
 
-    def plot_train_val(self, train, val):
+    def plot_train_val(self, train, val, batch_size, epochs):
         epoch, _ = train.shape
         plt.plot(range(epoch), train[:, 0], label='train_NN0')
         plt.plot(range(epoch), val[:, 0], label='val_NN0')
+        plt.legend()
+        plt.title(f"Training and validation curves, batch size {batch_size}, epochs {epochs}")
         plt.show()
         plt.close()
 
@@ -307,7 +309,7 @@ class BNN:
                         "Holdout loss(es)": v_losses
                     })
 
-        self.plot_train_val(train_losses, val_losses)
+        self.plot_train_val(train_losses, val_losses, batch_size, epochs)
 
     def predict(self, inputs, factored=False, *args, **kwargs):
         """Returns the distribution predicted by the model for each input vector in inputs.

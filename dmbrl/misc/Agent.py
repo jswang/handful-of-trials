@@ -79,6 +79,18 @@ class Agent:
             if done:
                 break
 
+        accelerometer = obs[0:3]
+        goal_lidar = obs[3:19] # 16 bins which indicate location of goal
+        gyro = obs[19:22]
+        hazards_lidar = obs[22:38] # 16 bins which indicate location of hazards
+        magnetometer = obs[38:41]
+        vases_lidar = obs[41:57] #16 bins which indicate location of vases
+        velocimeter = obs[57:60]
+        print(goal_lidar)
+        print(hazards_lidar)
+        print(vases_lidar)
+        self.env.render()
+
         if video_record:
             recorder.capture_frame()
             recorder.close()

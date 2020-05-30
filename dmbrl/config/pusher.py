@@ -47,7 +47,9 @@ class PusherConfigModule:
     def targ_proc(obs, next_obs):
         return next_obs - obs
 
-    def obs_cost_fn(self, obs):
+    # PE-TS is assuming a known rewards model for use in calculating
+    # which trajectories are best
+    def obs_cost_fn(self, obs, _):
         to_w, og_w = 0.5, 1.25
         tip_pos, obj_pos, goal_pos = obs[:, 14:17], obs[:, 17:20], self.ENV.ac_goal_pos
 
