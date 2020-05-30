@@ -145,6 +145,7 @@ class MBExperiment:
                     )
                 )
             print("Rewards obtained:", [sample["reward_sum"] for sample in samples[:self.neval]])
+
             traj_obs.extend([sample["obs"] for sample in samples[:self.nrollouts_per_iter]])
             traj_acs.extend([sample["ac"] for sample in samples[:self.nrollouts_per_iter]])
             traj_rets.extend([sample["reward_sum"] for sample in samples[:self.neval]])

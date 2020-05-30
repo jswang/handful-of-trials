@@ -50,7 +50,7 @@ class Agent:
         video_record = record_fname is not None
         recorder = None if not video_record else VideoRecorder(self.env, record_fname)
 
-        times, rewards = [], []
+        times, rewards, cost = [], [], []
         O, A, reward_sum, done = [self.env.reset()], [], 0, False
 
         policy.reset()
@@ -76,6 +76,8 @@ class Agent:
             O.append(obs)
             reward_sum += reward
             rewards.append(reward)
+            if 'cost' in info:
+                cost.append(info['cost'])
             if done:
                 break
 
@@ -83,9 +85,6 @@ class Agent:
             recorder.capture_frame()
             recorder.close()
 
-        cost = np.array([])
-        if 'cost' in info:
-            cost = np.array(info['cost'])
         return {
             "obs": np.array(O),
             "ac": np.array(A),
