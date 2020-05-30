@@ -83,9 +83,13 @@ class Agent:
             recorder.capture_frame()
             recorder.close()
 
+        cost = np.array([])
+        if 'cost' in info:
+            cost = np.array(info['cost'])
         return {
             "obs": np.array(O),
             "ac": np.array(A),
             "reward_sum": reward_sum,
             "rewards": np.array(rewards),
+            "cost": cost
         }

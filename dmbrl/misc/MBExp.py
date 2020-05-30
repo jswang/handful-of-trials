@@ -75,7 +75,7 @@ class MBExperiment:
         """
         os.makedirs(self.logdir, exist_ok=True)
 
-        traj_obs, traj_acs, traj_rets, traj_rews = [], [], [], []
+        traj_obs, traj_acs, traj_rets, traj_rews, traj_cost = [], [], [], [], []
 
         # Perform initial rollouts
         # uses policy.act() to come up with action, should be uniform random
@@ -92,6 +92,7 @@ class MBExperiment:
             traj_obs.append(samples[-1]["obs"])
             traj_acs.append(samples[-1]["ac"])
             traj_rews.append(samples[-1]["rewards"])
+            traj_cost.append(samples[-1]["cost"])
 
         # jsw: "Initialize data D with a random controller for one trial"
         if self.ninit_rollouts > 0:
@@ -148,6 +149,7 @@ class MBExperiment:
             traj_acs.extend([sample["ac"] for sample in samples[:self.nrollouts_per_iter]])
             traj_rets.extend([sample["reward_sum"] for sample in samples[:self.neval]])
             traj_rews.extend([sample["rewards"] for sample in samples[:self.nrollouts_per_iter]])
+            traj_cost.extend([sample["cost"] for sample in samples[:self.nrollouts_per_iter]])
             samples = samples[:self.nrollouts_per_iter]
 
             self.policy.dump_logs(self.logdir, iter_dir)
@@ -157,7 +159,8 @@ class MBExperiment:
                     "observations": traj_obs,
                     "actions": traj_acs,
                     "returns": traj_rets,
-                    "rewards": traj_rews
+                    "rewards": traj_rews,
+                    "cost": traj_cost,
                 }
             )
             # Delete iteration directory if not used
