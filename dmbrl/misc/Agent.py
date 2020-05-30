@@ -59,7 +59,7 @@ class Agent:
                 recorder.capture_frame()
             start = time.time()
             # jsw: at this time in the horizon, get an action from the policy.
-            print("time horizon {}, running MPC".format(t))
+            # print("time horizon {}, running MPC".format(t))
             # jsw: .act() is MPC actually solving limited time optimal control problem
             # for best action given past info and it's planning horizon (plan_hor)
             A.append(policy.act(O[t], t))
@@ -82,8 +82,8 @@ class Agent:
             recorder.capture_frame()
             recorder.close()
 
-        print("Average action selection time: ", np.mean(times))
-        print("Rollout length: ", len(A))
+        # print("Average action selection time: ", np.mean(times))
+        # print("Rollout length: ", len(A))
 
         return {
             "obs": np.array(O),

@@ -155,9 +155,7 @@ def _create_ctrl_config(ctrl_cfg, cfg_module, ctrl_type, ctrl_args, type_map):
         if ctrl_args["model-type"] == "D" and ctrl_cfg.prop_cfg.mode != "E":
             raise ValueError("Can only use deterministic propagation for deterministic models.")
 
-        ctrl_cfg.opt_cfg.mode = ctrl_args.get("opt-type", "SafeOpt")
-        print(ctrl_cfg.opt_cfg.mode)
-        print("------------------------------------------------------------------")
+        ctrl_cfg.opt_cfg.mode = ctrl_args.get("opt-type", "CEM")
         if ctrl_cfg.opt_cfg.mode == "CEM":
             type_map.ctrl_cfg.opt_cfg.cfg = DotMap(
                 max_iters=int,
@@ -169,12 +167,6 @@ def _create_ctrl_config(ctrl_cfg, cfg_module, ctrl_type, ctrl_args, type_map):
         elif ctrl_cfg.opt_cfg.mode == "Random":
             type_map.ctrl_cfg.opt_cfg.cfg = DotMap(
                 popsize=int
-            )
-        elif ctrl_cfg.opt_cfg.mode=="SafeOpt":
-            type_map.ctrl_cfg.opt_cfg.cfg=DotMap(
-                max_iters=int,
-                swarmsize=int,
-                beta=float
             )
         else:
             raise NotImplementedError("Unknown optimizer.")

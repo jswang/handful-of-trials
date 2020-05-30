@@ -94,12 +94,12 @@ class SafetyPointGoal1ConfigModule:
             model_dir=model_init_cfg.get("model_dir", None)
         ))
         if not model_init_cfg.get("load_model", False):
-            model.add(FC(200, input_dim=self.MODEL_IN, activation="swish", weight_decay=0.000025))
-            model.add(FC(200, activation="swish", weight_decay=0.00005))
-            model.add(FC(200, activation="swish", weight_decay=0.000075))
-            model.add(FC(200, activation="swish", weight_decay=0.000075))
+            model.add(FC(500, input_dim=self.MODEL_IN, activation="swish", weight_decay=0.000025))
+            model.add(FC(500, activation="swish", weight_decay=0.00005))
+            model.add(FC(500, activation="swish", weight_decay=0.000075))
+            model.add(FC(500, activation="swish", weight_decay=0.000075))
             model.add(FC(self.MODEL_OUT, weight_decay=0.0001))
-        model.finalize(tf.train.AdamOptimizer, {"learning_rate": 0.001},experimental_run_tf_function=False)
+        model.finalize(tf.compat.v1.train.AdamOptimizer, {"learning_rate": 0.001})
         return model
 
     def gp_constructor(self, model_init_cfg):

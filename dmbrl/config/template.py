@@ -22,7 +22,7 @@ class EnvConfigModule:
         self.ENV = gym.make(self.ENV_NAME)
         cfg = tf.ConfigProto()
         cfg.gpu_options.allow_growth = True
-        self.SESS = tf.Session(config=cfg)
+        self.SESS =  tf.compat.v1.Session(config=cfg)
         self.NN_TRAIN_CFG = {"epochs": None}
         self.OPT_CFG = {
             "Random": {

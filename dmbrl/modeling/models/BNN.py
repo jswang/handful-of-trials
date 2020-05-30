@@ -6,6 +6,7 @@ import os
 
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 from tqdm import trange
 from scipy.io import savemat, loadmat
 
@@ -154,14 +155,14 @@ class BNN:
 
         # Construct all variables.
         with self.sess.as_default():
-            with tf.variable_scope(self.name):
+            with tf.compat.v1.variable_scope(self.name):
                 self.scaler = TensorStandardScaler(self.layers[0].get_input_dim())
                 self.max_logvar = tf.Variable(np.ones([1, self.layers[-1].get_output_dim() // 2])/2., dtype=tf.float32,
                                               name="max_log_var")
                 self.min_logvar = tf.Variable(-np.ones([1, self.layers[-1].get_output_dim() // 2])*10., dtype=tf.float32,
                                               name="min_log_var")
                 for i, layer in enumerate(self.layers):
-                    with tf.variable_scope("Layer%i" % i):
+                    with tf.compat.v1.variable_scope("Layer%i" % i):
                         layer.construct_vars()
                         self.decays.extend(layer.get_decays())
                         self.optvars.extend(layer.get_vars())
@@ -169,7 +170,7 @@ class BNN:
         self.nonoptvars.extend(self.scaler.get_vars())
 
         # Set up training
-        with tf.variable_scope(self.name):
+        with tf.compat.v1.variable_scope(self.name):
             self.optimizer = optimizer(**optimizer_args)
             self.sy_train_in = tf.placeholder(dtype=tf.float32,
                                               shape=[self.num_nets, None, self.layers[0].get_input_dim()],
@@ -188,7 +189,7 @@ class BNN:
         self.sess.run(tf.variables_initializer(self.optvars + self.nonoptvars + self.optimizer.variables()))
 
         # Set up prediction
-        with tf.variable_scope(self.name):
+        with tf.compat.v1.variable_scope(self.name):
             self.sy_pred_in2d = tf.placeholder(dtype=tf.float32,
                                                shape=[None, self.layers[0].get_input_dim()],
                                                name="2D_training_inputs")
@@ -213,6 +214,13 @@ class BNN:
                     var.load(params_dict[str(i)])
         self.finalized = True
 
+    def plot_train_val(self, train, val):
+        epoch, _ = train.shape
+        plt.plot(range(epoch), train[:, 0], label='train_NN0')
+        plt.plot(range(epoch), val[:, 0], label='val_NN0')
+        plt.show()
+        plt.close()
+
     #################
     # Model Methods #
     #################
@@ -235,7 +243,7 @@ class BNN:
         def shuffle_rows(arr):
             idxs = np.argsort(np.random.uniform(size=arr.shape), axis=-1)
             return arr[np.arange(arr.shape[0])[:, None], idxs]
-
+        print(f"training BNN, {epochs} epochs, holdout_ratio {holdout_ratio}")
         # Split into training and holdout sets
         num_holdout = min(int(inputs.shape[0] * holdout_ratio), max_logging)
         permutation = np.random.permutation(inputs.shape[0])
@@ -252,7 +260,10 @@ class BNN:
             epoch_range = range(epochs)
         else:
             epoch_range = trange(epochs, unit="epoch(s)", desc="Network training")
-        for _ in epoch_range:
+        train_losses = np.zeros((epochs, self.num_nets))
+        val_losses = np.zeros((epochs, self.num_nets))
+        for e in epoch_range:
+            # for every batch, run a forward/backward pass
             for batch_num in range(int(np.ceil(idxs.shape[-1] / batch_size))):
                 batch_idxs = idxs[:, batch_num * batch_size:(batch_num + 1) * batch_size]
                 self.sess.run(
@@ -260,34 +271,41 @@ class BNN:
                     feed_dict={self.sy_train_in: inputs[batch_idxs], self.sy_train_targ: targets[batch_idxs]}
                 )
             idxs = shuffle_rows(idxs)
+            # Print the progress using epoch_range, a progress bar printer
             if not hide_progress:
                 if holdout_ratio < 1e-12:
-                    epoch_range.set_postfix({
-                        "Training loss(es)": self.sess.run(
+                    t_losses = self.sess.run(
+                                self.mse_loss,
+                                feed_dict={
+                                    self.sy_train_in: inputs[idxs[:, :max_logging]],
+                                    self.sy_train_targ: targets[idxs[:, :max_logging]]
+                                }
+                            )
+                    epoch_range.set_postfix({ "Training loss(es)": t_losses})
+                    train_losses[e, :] = t_losses
+                else:
+                    t_losses= self.sess.run(
                             self.mse_loss,
                             feed_dict={
                                 self.sy_train_in: inputs[idxs[:, :max_logging]],
                                 self.sy_train_targ: targets[idxs[:, :max_logging]]
                             }
                         )
-                    })
-                else:
-                    epoch_range.set_postfix({
-                        "Training loss(es)": self.sess.run(
-                            self.mse_loss,
-                            feed_dict={
-                                self.sy_train_in: inputs[idxs[:, :max_logging]],
-                                self.sy_train_targ: targets[idxs[:, :max_logging]]
-                            }
-                        ),
-                        "Holdout loss(es)": self.sess.run(
+                    v_losses = self.sess.run(
                             self.mse_loss,
                             feed_dict={
                                 self.sy_train_in: holdout_inputs,
                                 self.sy_train_targ: holdout_targets
                             }
                         )
+                    train_losses[e, :] = t_losses
+                    val_losses[e, :] = v_losses
+                    epoch_range.set_postfix({
+                        "Training loss(es)": t_losses,
+                        "Holdout loss(es)": v_losses
                     })
+
+        self.plot_train_val(train_losses, val_losses)
 
     def predict(self, inputs, factored=False, *args, **kwargs):
         """Returns the distribution predicted by the model for each input vector in inputs.

@@ -78,8 +78,12 @@ class MBExperiment:
         traj_obs, traj_acs, traj_rets, traj_rews = [], [], [], []
 
         # Perform initial rollouts
+        # uses policy.act() to come up with action, should be uniform random
+        #
         samples = []
+        print("Acting randomly")
         for i in range(self.ninit_rollouts):
+
             samples.append(
                 self.agent.sample(
                     self.task_hor, self.policy
@@ -91,6 +95,7 @@ class MBExperiment:
 
         # jsw: "Initialize data D with a random controller for one trial"
         if self.ninit_rollouts > 0:
+            print("Training on random actions")
             # jsw this trains the NN model for the very first time
             # policy is of type Controller, which MPC inherits from
             self.policy.train(
@@ -112,6 +117,11 @@ class MBExperiment:
             samples = []
             for j in range(self.nrecord):
                 samples.append(
+                    #####################
+                    # This call does a lot! uses policy.act() to come up with action
+                    # policy.act() solves open loop finite time problem
+                    # Uses environment to actually act.
+                    #####################
                     self.agent.sample(
                         self.task_hor, self.policy,
                         os.path.join(iter_dir, "rollout%d.mp4" % j)
