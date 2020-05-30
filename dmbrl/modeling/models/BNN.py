@@ -309,7 +309,7 @@ class BNN:
                         "Holdout loss(es)": v_losses
                     })
 
-        self.plot_train_val(train_losses, val_losses, batch_size, epochs)
+        # self.plot_train_val(train_losses, val_losses, batch_size, epochs)
 
     def predict(self, inputs, factored=False, *args, **kwargs):
         """Returns the distribution predicted by the model for each input vector in inputs.

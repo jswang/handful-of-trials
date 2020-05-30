@@ -14,18 +14,17 @@ from dmbrl.misc.DotmapUtils import get_required_argument
 from dmbrl.modeling.layers import FC
 import dmbrl.env
 
-
+# modified version of Safexp-PointGoal1-v0, the agent gets exact
+# knowledge of distance to goal, no knowledge of hazards
 class SafetyPointGoal1ConfigModule:
-    ENV_NAME = 'Safexp-PointGoal1-v0'
-    # copied from pusher
-    TASK_HORIZON = 150
-    NTRAIN_ITERS = 100
+    # ENV_NAME = 'Safexp-PointGoal1-v0'
+    TASK_HORIZON = 200
+    NTRAIN_ITERS = 50
     NROLLOUTS_PER_ITER = 1
-    # from pusher
     PLAN_HOR = 25
-    # 1 state points, 2 action points
-    MODEL_IN, MODEL_OUT = 3, 2
     GP_NINDUCING_POINTS = 200
+    # Input: 1 state + 2 actions, output 1 state
+    MODEL_IN, MODEL_OUT = 3, 1
 
     def __init__(self):
 
@@ -33,11 +32,8 @@ class SafetyPointGoal1ConfigModule:
             'placements_extents': [-1.5,-1.5, 1.5, 1.5],
             'robot_base': 'xmls/point.xml',
             'observe_goal_dist': True,
-            # 'observe_goal_lidar': True,
-            # 'observe_box_lidar': True,
-            # 'observe_hazards': True,
-            # 'observe_vases': True,
             'observe_goal_lidar': False,
+            # Change these all to true to get cost estimates
             'observe_box_lidar': False,
             'observe_hazards': False,
             'observe_vases': False,
@@ -61,18 +57,18 @@ class SafetyPointGoal1ConfigModule:
         }
         self.ENV = Engine(config)
 
-        #settings from pusher
+        #settings from cartpole
         cfg = tf.ConfigProto()
         cfg.gpu_options.allow_growth = True
         self.SESS = tf.compat.v1.Session(config=cfg)
         self.NN_TRAIN_CFG = {"epochs": 5}
         self.OPT_CFG = {
             "Random": {
-                "popsize": 2500
+                "popsize": 2000
             },
             "CEM": {
-                "popsize": 500,
-                "num_elites": 50,
+                "popsize": 400,
+                "num_elites": 40,
                 "max_iters": 5,
                 "alpha": 0.1
             }
@@ -88,25 +84,29 @@ class SafetyPointGoal1ConfigModule:
     def targ_proc(obs, next_obs):
         return next_obs - obs
 
-    # Just using self to get constants, can't store any state b/c this function
-    # gets parallelized
+    # This next_obs and obs are tensors with nparticles number of rows
+    # next_obs have mean and variance in the the two columns
+    # cur_obs just has mean
+    @staticmethod
     def obs_cost_fn(next_obs, cur_obs):
+        # configs lifted from engine.py of safety gym
+        CONFIG_REWARD_DISTANCE = 1.0 # reward for reducing distance to the goal
+        CONFIG_GOAL_SIZE = 0.3 # radius of the goal
+        CONFIG_REWARD_GOAL = 1.0 #reward for reaching the goal
+
         # Components of observation, from safety-gym engine.py obs()
-        # ['goal_dist', 'goal_lidar', 'hazards_lidar', 'vases_lidar']
         if isinstance(next_obs, np.ndarray):
-            goal_dist = -np.log(next_obs[0, :]) # np.exp(-self.dist_goal())
-            prev_goal_dist = -np.log(cur_obs[0, :]) # np.exp(-self.dist_goal())
+            goal_dist = -np.log(next_obs[:, 0]) # np.exp(-self.dist_goal())
+            prev_goal_dist = -np.log(cur_obs[:, 0]) # np.exp(-self.dist_goal())
         else:
-            goal_dist = -tf.log(next_obs[0, :]) # np.exp(-self.dist_goal())
-            prev_goal_dist = -tf.log(cur_obs[0, :]) # np.exp(-self.dist_goal())
+            goal_dist = -tf.log(next_obs[:, 0]) # np.exp(-self.dist_goal())
+            prev_goal_dist = -tf.log(cur_obs[:, 0]) # np.exp(-self.dist_goal())
 
-        reward = 0
         # dense reward for moving closer to goal
-        reward += (prev_goal_dist - goal_dist) # * self.ENV.config['reward_distance']
+        reward = (prev_goal_dist - goal_dist) * CONFIG_REWARD_DISTANCE
         # reward for hitting the goal
-        if goal_dist <= self.goal_size:
-            reward += 1.0 #self.reward_goal
-
+        reward += tf.cast(goal_dist <= CONFIG_GOAL_SIZE, dtype=tf.float32) * CONFIG_REWARD_GOAL
+        reward = tf.expand_dims(reward, axis=1)
         return -reward
 
     # In safety point goal, there is no penalization on actions
@@ -119,12 +119,12 @@ class SafetyPointGoal1ConfigModule:
             sess=self.SESS, load_model=model_init_cfg.get("load_model", False),
             model_dir=model_init_cfg.get("model_dir", None)
         ))
+        # model from cartpole
         if not model_init_cfg.get("load_model", False):
-            model.add(FC(500, input_dim=self.MODEL_IN, activation="swish", weight_decay=0.000025))
-            model.add(FC(500, activation="swish", weight_decay=0.00005))
-            model.add(FC(500, activation="swish", weight_decay=0.000075))
-            model.add(FC(500, activation="swish", weight_decay=0.000075))
-            model.add(FC(self.MODEL_OUT, weight_decay=0.0001))
+            model.add(FC(500, input_dim=self.MODEL_IN, activation='swish', weight_decay=0.0001))
+            model.add(FC(500, activation='swish', weight_decay=0.00025))
+            model.add(FC(500, activation='swish', weight_decay=0.00025))
+            model.add(FC(self.MODEL_OUT, weight_decay=0.0005))
         model.finalize(tf.compat.v1.train.AdamOptimizer, {"learning_rate": 0.001})
         return model
 

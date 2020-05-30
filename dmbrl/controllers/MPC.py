@@ -282,10 +282,12 @@ class MPC(Controller):
 
             def iteration(t, total_cost, cur_obs, pred_trajs):
                 cur_acs = ac_seqs[t]
+                # 20 partices x MODEL_OUT are the dimensions
                 next_obs = self._predict_next_obs(cur_obs, cur_acs)
                 delta_cost = tf.reshape(
                     self.obs_cost_fn(next_obs, cur_obs) + self.ac_cost_fn(cur_acs), [-1, self.npart]
                 )
+
                 next_obs = self.obs_postproc2(next_obs)
                 pred_trajs = tf.concat([pred_trajs, next_obs[None]], axis=0)
                 return t + 1, total_cost + delta_cost, next_obs, pred_trajs
