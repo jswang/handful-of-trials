@@ -18,8 +18,8 @@ import dmbrl.env
 # knowledge of distance to goal, no knowledge of hazards
 class SafetyPointGoal1ConfigModule:
     # ENV_NAME = 'Safexp-PointGoal1-v0'
-    TASK_HORIZON = 200
-    NTRAIN_ITERS = 50
+    TASK_HORIZON = 1000
+    NTRAIN_ITERS = 1000
     NROLLOUTS_PER_ITER = 1
     PLAN_HOR = 25
     GP_NINDUCING_POINTS = 200
@@ -96,8 +96,8 @@ class SafetyPointGoal1ConfigModule:
 
         # Components of observation, from safety-gym engine.py obs()
         if isinstance(next_obs, np.ndarray):
-            goal_dist = -np.log(next_obs[:, 0]) # np.exp(-self.dist_goal())
-            prev_goal_dist = -np.log(cur_obs[:, 0]) # np.exp(-self.dist_goal())
+            goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
+            prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
         else:
             goal_dist = -tf.log(next_obs[:, 0]) # np.exp(-self.dist_goal())
             prev_goal_dist = -tf.log(cur_obs[:, 0]) # np.exp(-self.dist_goal())
