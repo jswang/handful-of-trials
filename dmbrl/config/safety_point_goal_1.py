@@ -23,7 +23,7 @@ class SafetyPointGoal1ConfigModule:
     PLAN_HOR = 25
     GP_NINDUCING_POINTS = 200
     # Input: 1 state + 2 actions, output 1 state
-    MODEL_IN, MODEL_OUT = 3, 1
+    MODEL_IN, MODEL_OUT = 31, 29
 
     def __init__(self):
 
@@ -31,7 +31,7 @@ class SafetyPointGoal1ConfigModule:
             'placements_extents': [-1.5,-1.5, 1.5, 1.5],
             'robot_base': 'xmls/point.xml',
             'observe_goal_dist': True,
-            'observe_goal_lidar': False,
+            'observe_goal_lidar': True,
             # Change these all to true to get cost estimates
             'observe_box_lidar': False,
             'observe_hazards': False,
@@ -42,8 +42,7 @@ class SafetyPointGoal1ConfigModule:
             'lidar_num_bins': 16,
             'lidar_max_dist': 3,
             'goal_keepout': 0.305,
-            'reward_circle': 0.1,
-            'sensors_obs':[], # ['accelerometer', 'velocimeter', 'gyro', 'magnetometer'],
+            'sensors_obs': ['accelerometer', 'velocimeter', 'gyro', 'magnetometer'],
             'constrain_hazards': True,
             'hazards_num': 8,
             'hazards_keepout': 0.18,
@@ -90,33 +89,34 @@ class SafetyPointGoal1ConfigModule:
     # next_obs have mean and variance in the the two columns
     # cur_obs just has mean
     @staticmethod
-    def obs_cost_fn_exact(next_obs, cur_obs):
+    def obs_cost_fn(next_obs, cur_obs):
         # configs lifted from engine.py of safety gym
         CONFIG_REWARD_DISTANCE = 1.0 # reward for reducing distance to the goal
         CONFIG_GOAL_SIZE = 0.3 # radius of the goal
         CONFIG_REWARD_GOAL = 1.0 #reward for reaching the goal
 
         # Components of observation, from safety-gym engine.py obs()
+        # obs space: ['accelerometer', 'goal_dist', 'goal_lidar', 'gyro', 'magnetometer', 'velocimeter']
         if isinstance(next_obs, np.ndarray):
-            goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
-            prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
+            goal_dist = next_obs[:, 4] # np.exp(-self.dist_goal())
+            prev_goal_dist = cur_obs[:, 4] # np.exp(-self.dist_goal())
         else:
-            goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
-            prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
+            goal_dist = next_obs[:, 4] # np.exp(-self.dist_goal())
+            prev_goal_dist = cur_obs[:, 4] # np.exp(-self.dist_goal())
 
         # dense reward for moving closer to goal
         # so, if before the goal distance was greater, and now it is less, reward that
         # if you have moved away from the goal, aka prev_goal_dist < goal_dist, penalize that
         # but this is a delta on distance, what about rewarding absolute distance?
         reward = (prev_goal_dist - goal_dist) * CONFIG_REWARD_DISTANCE
-        print(f"prev_goal_dist: {prev_goal_dist}, goal_dist: {goal_dist}, reward: {reward}")
+        # print(f"prev_goal_dist: {prev_goal_dist}, goal_dist: {goal_dist}, reward: {reward}")
         # reward for hitting the goal
         reward += tf.cast(goal_dist <= CONFIG_GOAL_SIZE, dtype=tf.float32) * CONFIG_REWARD_GOAL
         reward = tf.expand_dims(reward, axis=1)
         return -reward
 
     @staticmethod
-    def obs_cost_fn(next_obs, cur_obs):
+    def obs_cost_fn_abs(next_obs, cur_obs):
         # configs lifted from engine.py of safety gym
         CONFIG_COST_DISTANCE = 1000.0 # reward for reducing distance to the goal
         CONFIG_GOAL_SIZE = 0.3 # radius of the goal
