@@ -79,7 +79,6 @@ class MBExperiment:
 
         # Perform initial rollouts
         # uses policy.act() to come up with action, should be uniform random
-        #
         samples = []
         print("Acting randomly")
         for i in range(self.ninit_rollouts):

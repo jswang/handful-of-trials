@@ -55,15 +55,16 @@ class Agent:
 
         policy.reset()
 
+        # for the whole episode, get action from policy and then act
         for t in range(horizon):
             if video_record:
                 recorder.capture_frame()
             start = time.time()
-            # jsw: at this time in the horizon, get an action from the policy.
-            # print("time horizon {}, running MPC".format(t))
-            # jsw: .act() is MPC actually solving limited time optimal control problem
+            # .act() is MPC actually solving limited time optimal control problem
             # for best action given past info and it's planning horizon (plan_hor)
-            A.append(policy.act(O[t], t))
+            a, c = policy.act(O[t], t, get_pred_cost=True) #O[t] is current state
+            A.append(a)
+            # A.append(policy.act(O[t], t))
             times.append(time.time() - start)
             if self.noise_stddev is None:
                 # jsw Using environment to actually step the obs, reward, and info

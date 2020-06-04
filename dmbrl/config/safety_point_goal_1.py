@@ -17,8 +17,7 @@ import dmbrl.env
 # modified version of Safexp-PointGoal1-v0, the agent gets exact
 # knowledge of distance to goal, no knowledge of hazards
 class SafetyPointGoal1ConfigModule:
-    # ENV_NAME = 'Safexp-PointGoal1-v0'
-    TASK_HORIZON = 1000
+    TASK_HORIZON = 200
     NTRAIN_ITERS = 1000
     NROLLOUTS_PER_ITER = 1
     PLAN_HOR = 25
@@ -73,22 +72,25 @@ class SafetyPointGoal1ConfigModule:
                 "alpha": 0.1
             }
         }
+    def get_env(self):
+        return self.ENV
 
     # Safety gym already transforms angles into cosines and sines
-
-    # These make the NN learn deltas on next state rather than true next state
+    # My prediction is just the next state, not a delta on the old state.
     @staticmethod
     def obs_postproc(obs, pred):
-        return obs + pred
+        return pred
+
+    # the next state is simply the next observation, no delta being calculated
     @staticmethod
     def targ_proc(obs, next_obs):
-        return next_obs - obs
+        return next_obs
 
     # This next_obs and obs are tensors with nparticles number of rows
     # next_obs have mean and variance in the the two columns
     # cur_obs just has mean
     @staticmethod
-    def obs_cost_fn(next_obs, cur_obs):
+    def obs_cost_fn_exact(next_obs, cur_obs):
         # configs lifted from engine.py of safety gym
         CONFIG_REWARD_DISTANCE = 1.0 # reward for reducing distance to the goal
         CONFIG_GOAL_SIZE = 0.3 # radius of the goal
@@ -99,15 +101,41 @@ class SafetyPointGoal1ConfigModule:
             goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
             prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
         else:
-            goal_dist = -tf.log(next_obs[:, 0]) # np.exp(-self.dist_goal())
-            prev_goal_dist = -tf.log(cur_obs[:, 0]) # np.exp(-self.dist_goal())
+            goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
+            prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
 
         # dense reward for moving closer to goal
+        # so, if before the goal distance was greater, and now it is less, reward that
+        # if you have moved away from the goal, aka prev_goal_dist < goal_dist, penalize that
+        # but this is a delta on distance, what about rewarding absolute distance?
         reward = (prev_goal_dist - goal_dist) * CONFIG_REWARD_DISTANCE
+        print(f"prev_goal_dist: {prev_goal_dist}, goal_dist: {goal_dist}, reward: {reward}")
         # reward for hitting the goal
         reward += tf.cast(goal_dist <= CONFIG_GOAL_SIZE, dtype=tf.float32) * CONFIG_REWARD_GOAL
         reward = tf.expand_dims(reward, axis=1)
         return -reward
+
+    @staticmethod
+    def obs_cost_fn(next_obs, cur_obs):
+        # configs lifted from engine.py of safety gym
+        CONFIG_COST_DISTANCE = 1000.0 # reward for reducing distance to the goal
+        CONFIG_GOAL_SIZE = 0.3 # radius of the goal
+        CONFIG_REWARD_GOAL = 1000.0 #reward for reaching the goal
+
+        # Components of observation, from safety-gym engine.py obs()
+        if isinstance(next_obs, np.ndarray):
+            goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
+            prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
+        else:
+            goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
+            prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
+
+        # the higher your distance, the greater the cost
+        cost = goal_dist * CONFIG_COST_DISTANCE
+        # reduced cost for hitting the goal
+        cost -= tf.cast(goal_dist <= CONFIG_GOAL_SIZE, dtype=tf.float32) * CONFIG_REWARD_GOAL
+        cost = tf.expand_dims(cost, axis=1)
+        return cost
 
     # In safety point goal, there is no penalization on actions
     def ac_cost_fn(self, acs):
