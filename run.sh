@@ -20,9 +20,11 @@ elif [ "$1" = "safety_fast" ]; then
     python scripts/mbexp.py -env safety -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
 # Run PPO, TRPO, and CPO on safety env
 elif [ "$1" = "safety_agents" ]; then
-    python experiment.py --algo 'trpo'
-    python experiment.py --algo 'ppo'
-    python experiment.py --algo 'cpo'
+    python test_other_agents.py --algo 'trpo'
+    python test_other_agents.py --algo 'ppo'
+    python test_other_agents.py --algo 'cpo'
+else
+    echo "Options: safety_agents, safety_fast, safety, cartpole"
 fi
 
 
