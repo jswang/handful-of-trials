@@ -115,28 +115,6 @@ class SafetyPointGoal1ConfigModule:
         reward = tf.expand_dims(reward, axis=1)
         return -reward
 
-    @staticmethod
-    def obs_cost_fn_abs(next_obs, cur_obs):
-        # configs lifted from engine.py of safety gym
-        CONFIG_COST_DISTANCE = 1000.0 # reward for reducing distance to the goal
-        CONFIG_GOAL_SIZE = 0.3 # radius of the goal
-        CONFIG_REWARD_GOAL = 1000.0 #reward for reaching the goal
-
-        # Components of observation, from safety-gym engine.py obs()
-        if isinstance(next_obs, np.ndarray):
-            goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
-            prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
-        else:
-            goal_dist = next_obs[:, 0] # np.exp(-self.dist_goal())
-            prev_goal_dist = cur_obs[:, 0] # np.exp(-self.dist_goal())
-
-        # the higher your distance, the greater the cost
-        cost = goal_dist * CONFIG_COST_DISTANCE
-        # reduced cost for hitting the goal
-        cost -= tf.cast(goal_dist <= CONFIG_GOAL_SIZE, dtype=tf.float32) * CONFIG_REWARD_GOAL
-        cost = tf.expand_dims(cost, axis=1)
-        return cost
-
     # In safety point goal, there is no penalization on actions
     def ac_cost_fn(self, acs):
         return 0
