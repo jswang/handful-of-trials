@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 
 import tensorflow as tf
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import trange
@@ -223,6 +224,8 @@ class BNN:
             plt.plot(range(epoch), val[:, i], label=f'val_NN{i}')
         plt.legend()
         plt.title(f"Training and validation curves, batch size {batch_size}, epochs {epochs}")
+
+        Path(self.model_dir).mkdir(parents=True, exist_ok=True)
         if self.model_dir is not None:
             plt.savefig(os.path.join(self.model_dir, "train_vs_val.png"))
             np.save(os.path.join(self.model_dir, "train.npy"), train)
