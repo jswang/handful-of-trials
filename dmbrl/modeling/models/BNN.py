@@ -218,11 +218,15 @@ class BNN:
 
     def plot_train_val(self, train, val, batch_size, epochs):
         epoch, _ = train.shape
-        plt.plot(range(epoch), train[:, 0], label='train_NN0')
-        plt.plot(range(epoch), val[:, 0], label='val_NN0')
+        for i in range(self.num_nets):
+            plt.plot(range(epoch), train[:, i], label=f'train_NN{i}')
+            plt.plot(range(epoch), val[:, i], label=f'val_NN{i}')
         plt.legend()
         plt.title(f"Training and validation curves, batch size {batch_size}, epochs {epochs}")
-        plt.show()
+        if self.model_dir is not None:
+            plt.savefig(os.path.join(self.model_dir, "train_vs_val.png"))
+            np.save(os.path.join(self.model_dir, "train.npy"), train)
+            np.save(os.path.join(self.model_dir, "val.npy"), val)
         plt.close()
 
     #################
@@ -308,8 +312,8 @@ class BNN:
                         "Training loss(es)": t_losses,
                         "Holdout loss(es)": v_losses
                     })
-
-        # self.plot_train_val(train_losses, val_losses, batch_size, epochs)
+        if holdout_ratio > 0:
+            self.plot_train_val(train_losses, val_losses, batch_size, epochs)
 
     def predict(self, inputs, factored=False, *args, **kwargs):
         """Returns the distribution predicted by the model for each input vector in inputs.

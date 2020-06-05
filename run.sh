@@ -3,15 +3,19 @@
 # Make sure virtual env is activated
 source hand_venv/bin/activate
 
+
 # Vanilla pets on cartpole
 if [ "$1" = "cartpole" ]; then
     python scripts/mbexp.py -env cartpole
-# Vanilla pets on safety1
+# Vanilla pets on safety
 elif [ "$1" = "safety" ]; then
     python scripts/mbexp.py -env safety_point_goal_1
-# PE-TS with more pretraining of the neural network for safety network
+# PE-TS with more pretraining for safety network
 elif [ "$1" = "safety_pretrain" ]; then
-    python scripts/mbexp.py -env safety_point_goal_1 -o exp_cfg.exp_cfg.ninit_rollouts 5 -o ctrl_cfg.prop_cfg.model_train_cfg.epochs 10 -o ctrl_cfg.prop_cfg.model_train_cfg
+    python scripts/mbexp.py -env safety_point_goal_1 -o exp_cfg.exp_cfg.ninit_rollouts 10 -o ctrl_cfg.prop_cfg.model_init_cfg.model_dir 'data/train_val/safety' -o ctrl_cfg.prop_cfg.model_train_cfg.epochs 10 -o ctrl_cfg.prop_cfg.model_train_cfg.holdout_ratio .2
+# PE-TS with more pretraining for safety network
+elif [ "$1" = "halfcheetah_pretrain" ]; then
+    python scripts/mbexp.py -env halfcheetah -o exp_cfg.exp_cfg.ninit_rollouts 10 -o ctrl_cfg.prop_cfg.model_init_cfg.model_dir 'data/train_val/halfcheetah' -o ctrl_cfg.prop_cfg.model_train_cfg.epochs 10 -o ctrl_cfg.prop_cfg.model_train_cfg.holdout_ratio .2
 # Fast run Cartpole task horizon=5 (i/o 200), MPC planning horizon=5 (i/o 25)
 elif [ "$1" = "cartpole_fast" ]; then
     python scripts/mbexp.py -env cartpole -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
@@ -28,7 +32,7 @@ elif [ "$1" = "plot" ]; then
     python plot.py data/2020-06-05_cpo_PointSafety/ --savedir 'data' --title 'CPO Point Safety Goal' --dont_show
     python plot.py data/2020-06-05_ppo_PointSafety/ --savedir 'data' --title 'PPO Point Safety Goal' --dont_show
 else
-    echo "Options: plot, safety_agents, safety_fast, safety, cartpole"
+    echo "Options: plot, safety_agents, safety_fast, safety, cartpole, halfcheetah_pretrain, safety_pretrain"
 fi
 
 
