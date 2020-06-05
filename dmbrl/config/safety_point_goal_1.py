@@ -78,12 +78,12 @@ class SafetyPointGoal1ConfigModule:
     # My prediction is just the next state, not a delta on the old state.
     @staticmethod
     def obs_postproc(obs, pred):
-        return pred
+        return obs + pred
 
     # the next state is simply the next observation, no delta being calculated
     @staticmethod
     def targ_proc(obs, next_obs):
-        return next_obs
+        return next_obs - obs
 
     # This next_obs and obs are tensors with nparticles number of rows
     # next_obs have mean and variance in the the two columns
@@ -150,11 +150,10 @@ class SafetyPointGoal1ConfigModule:
         # model from cartpole
         if not model_init_cfg.get("load_model", False):
             model.add(FC(500, input_dim=self.MODEL_IN, activation='swish', weight_decay=0.0001))
-            model.add(FC(500, activation='swish', weight_decay=0.00025))
-            model.add(FC(500, activation='swish', weight_decay=0.00025))
-            model.add(FC(500, activation='swish', weight_decay=0.00025))
-            model.add(FC(self.MODEL_OUT, weight_decay=0.00025))
-        model.finalize(tf.compat.v1.train.AdamOptimizer, {"learning_rate": 0.0001})
+            model.add(FC(500, activation='swish', weight_decay=0.0005))
+            model.add(FC(500, activation='swish', weight_decay=0.0005))
+            model.add(FC(self.MODEL_OUT, weight_decay=0.0005))
+        model.finalize(tf.compat.v1.train.AdamOptimizer, {"learning_rate": 0.001})
         return model
 
     def gp_constructor(self, model_init_cfg):

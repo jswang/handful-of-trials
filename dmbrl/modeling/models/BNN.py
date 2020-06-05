@@ -230,6 +230,7 @@ class BNN:
             plt.savefig(os.path.join(self.model_dir, "train_vs_val.png"))
             np.save(os.path.join(self.model_dir, "train.npy"), train)
             np.save(os.path.join(self.model_dir, "val.npy"), val)
+        plt.show()
         plt.close()
 
     #################
