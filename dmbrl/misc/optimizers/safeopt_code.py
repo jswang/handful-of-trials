@@ -7,12 +7,13 @@ import numpy as np
 import scipy.stats as stats
 import GPy
 from .optimizer import Optimizer
-
-
+import tensorflow.contrib.eager as tfe
+from safeopt import SafeOptSwarm
+from safeopt import SafeOpt
 class SafeOptimizer(Optimizer):
     """A Tensorflow-compatible GP based safe optimizer.
     """
-    def __init__(self, sol_dim, max_iters, swarmsize=20, tf_session=None,
+    def __init__(self, sol_dim, max_iters, swarmsize=30, tf_session=None,
                  upper_bound=None,lower_bound=None, epsilon=0.001, beta=2):
         """Creates an instance of this class.
 
@@ -35,8 +36,7 @@ class SafeOptimizer(Optimizer):
         self.bounds = bounds
         self.epsilon, self.beta = epsilon, beta
         self.tf_sess = tf_session
-        self.fmin=-1000 # change later
-
+        self.fmin=-10**6 # change later
         if self.tf_sess is not None:
             with self.tf_sess.graph.as_default():
                 with tf.variable_scope("SafeOptSolver") as scope:
@@ -45,7 +45,14 @@ class SafeOptimizer(Optimizer):
 
         self.num_opt_iters, self.pt, self.var = None, None, None
         self.tf_compatible, self.cost_function = None, None
-
+        #Initialization of Points- Custom
+        init_pt=np.zeros((sol_dim,1)).T
+        
+        sample=np.array([[0]])
+        #--------------------------
+        self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0.001)
+        self.opt=SafeOptSwarm(self.gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
+        #self.opt=SafeOpt(self.gpmodel,self.fmin,self.bounds)
     def setup(self, cost_function, tf_compatible):
         """Sets up this optimizer using a given cost function.
 
@@ -69,61 +76,68 @@ class SafeOptimizer(Optimizer):
 
             def iteration(t, pt, var, best_val, best_sol):
                 
-                ''' 
-                self.gpmodel= tf.cond(
-                    tf.math.equal(t, 0),
-                    lambda: GPy.models.GPRegression(pt,-cost_function(pt),noise_var=0),
-                    lambda: None
+                def step_safeopt(t,pt,cost,best_val,best_sol):
+                    print("---------------Step of Safeopt-------------")
                     
-                )
-                
-                opt=tf.cond(
-                        tf.math.equal(t,0),
-                        lambda: SafeOptSwarm(self.gpmodel,fmin,bounds,swarm_size=swarmsize),
-                        lambda: opt.add_new_data_point(pt,-cost_function(pt)) 
-                        
-                        )
-                '''
-                
-                def step_safeopt(t,pt,best_val,best_sol):
-                    pt_np=pt
+                    #Convert to np
+                    pt_np=np.array(pt)
+                    cost_np=np.array(cost)
+                    best_val=np.array(best_val)
+                    best_sol=np.array(best_sol)
+
+                    print("Cost:{}".format(cost_np))
+                    print("Best Cost: {}".format(best_val))
+                    self.opt.add_new_data_point(pt_np,-cost_np)
+                    new_pt,stddev=self.opt.get_new_query_point("expanders") # Returns point most likely to expand safe set
+                    
+                    best_sol2,stddev2=self.opt.get_new_query_point("maximizers") # returns best parameters from current known points
+                    #best_sol2=self.opt.optimize(ucb=True)
+
+
+                    print("Expander Point Found: {}".format(new_pt))
+                    print("Maximizer Point Point:{}".format(best_sol2))
+
                      
-                    print("SafeOpt Running------------------------------------------------------------------")
-                    if np.array(t)==0:    
-                        print("time is {}".format(np.array(t)))
-                        self.gpmodel=GPy.models.GPRegression(np.array(pt_np),np.array(-cost_function(pt)),noise_var=0) # going bust
-                        print("reaches here4-----------------------------------------------------")
-                        opt=SafeOptSwarm(self.gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
-                    else:
-                        opt.add_new_data_point(np.array(pt_np),np.array(-cost_function(pt)))
-                    print("Reaches here---------------------------------------------------------------") 
-                    # Assumption: noise_var=0 is assumption, not true
-                    new_pt,stddev=opt.get_new_query_point("expanders") # Returns point most likely to expand safe set
-                    
-                    best_val2,best_sol2=opt.get_new_query_point("maximizers") # returns best parameters from current known points
-                    print("reaches 2-----------------------------------------------------------------")
-                    '''
-                    best_val2=tf.convert_to_tensor(best_val2)
-                    best_val2.set_shape(best_val.get_shape())
-                    best_sol2=tf.convert_to_tensor(best_sol2)
-                    best_sol2.set_shape(best_sol.get_shape())
-                    new_pt=tf.convert_to_tensor(new_pt)
-                    new_pt.set_shape(pt.get_shape())
-                    '''
-                    return new_pt,best_val2,best_sol2
-                print("reaches 3---------------------------------------------------------------------")
-                new_pt,best_val2,best_sol2 = tf.py_function(func=step_safeopt, inp=[t,pt,best_val,best_sol], Tout=[pt.dtype,best_val.dtype,best_sol.dtype])
-                best_val2=tf.convert_to_tensor(best_val2)
-                best_val2.set_shape(best_val.get_shape())
+
+                    print("-----------Step Ended------------------")
+                    return new_pt,best_sol2
+                pt=tf.expand_dims(pt,axis=0)
+                cost=cost_function(pt)
+                new_pt,best_sol2 = tfe.py_func(func=step_safeopt, inp=[t,pt,cost,best_val,best_sol], Tout=[pt.dtype,best_sol.dtype])
                 best_sol2=tf.convert_to_tensor(best_sol2)
                 best_sol2.set_shape(best_sol.get_shape())
                 new_pt=tf.convert_to_tensor(new_pt)
                 new_pt.set_shape(pt.get_shape())
-
-
-                return t + 1, new_pt, var, best_val2, best_sol2
+                new_cost=cost_function(new_pt)
+                new_pt=tf.squeeze(new_pt) # retain shape of pt
+                new_best_cost=tf.squeeze(new_cost) 
+                return t + 1, new_pt, var, new_best_cost, best_sol2 # var has no significance
 
             with self.tf_sess.graph.as_default():
+                '''
+                @tf.function
+                def wrapper_func(self):
+                    @tf.function 
+                    def initialize_gp_local(init_pt,sample):
+                        print("Entered initialize GP Local----------------")
+                        init_pt=init_pt.eval()
+                        sample=sample.eval()
+                        print("Sample cost is -------------------------")
+                        print(sample)
+                        self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0.001) 
+                        self.opt=SafeOptSwarm(gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
+                        print("Succesfully initialized GP for Safeopt-----------------------------------")
+                        return tf.float32(0)
+                    print("Wrapper called")    
+                
+                    return tf.py_function(initialize_gp_local,[init_pt,sample],tf.float32)
+                    #return initialize_gp_local(init_pt,sample)
+                print("Entered Session----------------------------") 
+                init_pt=tf.expand_dims(self.init_pt,axis=0) # Necessary to maintain dimensionality
+                sample=-cost_function(init_pt) # cost for init_pt
+                sample=tf.expand_dims(sample,axis=1)
+                '''
+                
                 self.num_opt_iters, self.pt, self.var, self.best_val, self.best_sol = tf.while_loop(
                     cond=continue_optimization, body=iteration,
                     loop_vars=[0, self.init_pt, self.init_var, float("inf"), self.init_pt]
@@ -137,14 +151,16 @@ class SafeOptimizer(Optimizer):
         
         
         if self.tf_compatible:
+            #print(init_pt.get_shape())
+            #print(init_var.get_shape())
             sol, solvar = self.tf_sess.run(
-                [self.pt, self.var],
+                [self.best_sol, self.var],
                 feed_dict={self.init_pt: init_pt, self.init_var: init_var}
             )
         else:
             pt, var, t = init_pt, init_var, 0
             
-            self.gpmodel=GPy.models.GPRegression(pt,self.cost_function(pt),noise_var=0)
+            self.gpmodel=GPy.models.GPRegression(pt,self.cost_function(pt),noise_var=0.001)
             opt=SafeOptSwarm(self.gpmodel,fmin) 
 
             while (t < self.max_iters) and np.max(var) > self.epsilon:

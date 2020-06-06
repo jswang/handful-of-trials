@@ -11,7 +11,7 @@ from scipy.io import savemat
 from .Controller import Controller
 from dmbrl.misc.DotmapUtils import get_required_argument
 from dmbrl.misc.optimizers import RandomOptimizer, CEMOptimizer
-from dmbrl.misc.optimizers.safeopt import SafeOptimizer
+from dmbrl.misc.optimizers.safeopt_code import SafeOptimizer
 
 class MPC(Controller):
     optimizers = {"CEM": CEMOptimizer, "Random": RandomOptimizer,"SafeOpt":SafeOptimizer}
@@ -213,7 +213,6 @@ class MPC(Controller):
             self.sy_cur_obs.load(obs, self.model.sess)
 
         soln = self.optimizer.obtain_solution(self.prev_sol, self.init_var)
-        print(soln)
         self.prev_sol = np.concatenate([np.copy(soln)[self.per*self.dU:], np.zeros(self.per*self.dU)])
         self.ac_buf = soln[:self.per*self.dU].reshape(-1, self.dU)
 

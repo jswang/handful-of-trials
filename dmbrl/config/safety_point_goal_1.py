@@ -43,7 +43,7 @@ class SafetyPointGoal1ConfigModule:
                 "alpha": 0.1
             },
             "SafeOpt":{
-                "swarmsize":20,
+                "swarmsize":30,
                 "max_iters":15,
                 "beta":2
             }

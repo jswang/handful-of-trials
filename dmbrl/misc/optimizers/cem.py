@@ -5,7 +5,7 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 import scipy.stats as stats
-
+import tensorflow.contrib.eager as tfe
 from .optimizer import Optimizer
 
 
@@ -74,8 +74,24 @@ class CEMOptimizer(Optimizer):
                 lb_dist, ub_dist = mean - self.lb, self.ub - mean
                 constrained_var = tf.minimum(tf.minimum(tf.square(lb_dist / 2), tf.square(ub_dist / 2)), var)
                 samples = tf.truncated_normal([self.popsize, self.sol_dim], mean, tf.sqrt(constrained_var))
+                
+                
+                def print_cost(t,costs):
+                    print("Entered print_cost")
+                    costs=np.array(costs)
+                    print("Mean costs:{}".format(np.mean(costs,axis=0)))
 
+                    return t
+                #comment out to not get action cost values during optimization
+                #-------------------------------
                 costs = cost_function(samples)
+                t_shape=t.get_shape()
+                print("Calculated Costs")
+                t=tfe.py_func(func=print_cost,inp=[t,costs],Tout=[t.dtype])
+                t=tf.convert_to_tensor(t)
+                t.set_shape(t_shape)
+                t=tf.squeeze(t)
+                #------------------------------ 
                 values, indices = tf.nn.top_k(-costs, k=self.num_elites, sorted=True)
 
                 best_val, best_sol = tf.cond(
