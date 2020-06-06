@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Make sure virtual env is activated
-source hand_venv/bin/activate
+# source hand_venv/bin/activate
 
 
 # Vanilla pets on cartpole
@@ -17,7 +17,7 @@ elif [ "$1" = "pretrain" ]; then
 elif [ "$1" = "fast" ]; then
     python scripts/mbexp.py -env "$2" -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
 
-# Safetopy
+# Safetopt
 elif [ "$1" = "safeopt" ]; then
     python scripts/mbexp.py -env safety_point_goal_1 -ca model-type P -ca prop-type DS -ca opt-type SafeOpt -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
 
