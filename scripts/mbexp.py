@@ -49,5 +49,5 @@ if __name__ == "__main__":
 # jsw: Manual runs
 # main('cartpole', "MPC",[['model-type', 'P'], ['prop-type', 'DS']] , [['exp_cfg.exp_cfg.ntrain_iters', '2'], ['exp_cfg.sim_cfg.task_hor', '5'], ['ctrl_cfg.opt_cfg.plan_hor', '5']]
 # , './log')
-# main('safety_point_goal_1', "MPC", [], [], 'log')
-# main('reacher', "MPC", [], [], 'log')
+# main('safety_point_goal_1', "MPC",[['model-type', 'P'], ['prop-type', 'DS']] , [['exp_cfg.exp_cfg.ntrain_iters', '2'], ['exp_cfg.sim_cfg.task_hor', '5'], ['ctrl_cfg.opt_cfg.plan_hor', '5']]
+# , './log')

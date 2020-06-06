@@ -16,7 +16,6 @@ from dmbrl.modeling.layers import FC
 from dmbrl.misc.DotmapUtils import *
 
 
-
 class BNN:
     """Neural network models which model aleatoric uncertainty (and possibly epistemic uncertainty
     with ensembling).
@@ -37,7 +36,6 @@ class BNN:
                 .sess ( tf.compat.v1.Session/None): The session that this model will use.
                     If None, creates a session with its own associated graph. Defaults to None.
         """
-        tf.set_random_seed(42)
         self.name = get_required_argument(params, 'name', 'Must provide name.')
         self.model_dir = params.get('model_dir', None)
 

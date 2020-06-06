@@ -69,6 +69,11 @@ class SafetyPointGoal1ConfigModule:
                 "num_elites": 40,
                 "max_iters": 5,
                 "alpha": 0.1
+            },
+            "SafeOpt":{
+                "swarmsize":30,
+                "max_iters":15,
+                "beta":2
             }
         }
     def get_env(self):

@@ -168,10 +168,18 @@ def _create_ctrl_config(ctrl_cfg, cfg_module, ctrl_type, ctrl_args, type_map):
             type_map.ctrl_cfg.opt_cfg.cfg = DotMap(
                 popsize=int
             )
+        
+        elif ctrl_cfg.opt_cfg.mode=="SafeOpt":     
+            type_map.ctrl_cfg.opt_cfg.cfg=DotMap(
+                max_iters=int,
+                swarmsize=int,                   
+                beta=float                  
+            )
+
         else:
-            raise NotImplementedError("Unknown optimizer.")
+            raise NotImplementedError("Unknown optimizer.")             
         ctrl_cfg.opt_cfg.cfg = cfg_module.OPT_CFG[ctrl_cfg.opt_cfg.mode]
-    else:
+    else:    
         raise NotImplementedError("Unknown controller class.")
 
 

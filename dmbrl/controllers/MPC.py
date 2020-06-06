@@ -11,10 +11,10 @@ from scipy.io import savemat
 from .Controller import Controller
 from dmbrl.misc.DotmapUtils import get_required_argument
 from dmbrl.misc.optimizers import RandomOptimizer, CEMOptimizer
-
+from dmbrl.misc.optimizers.safeopt_code import SafeOptimizer
 
 class MPC(Controller):
-    optimizers = {"CEM": CEMOptimizer, "Random": RandomOptimizer}
+    optimizers = {"CEM": CEMOptimizer, "Random": RandomOptimizer,"SafeOpt":SafeOptimizer}
 
     def __init__(self, params):
         """Creates class instance.
@@ -59,7 +59,7 @@ class MPC(Controller):
                         obs -> targ_proc(obs, next_obs)). Defaults to lambda obs, next_obs: next_obs.
                         Note: Only needs to process NumPy arrays.
                 .opt_cfg
-                    .mode (str): Internal optimizer that will be used. Choose between [CEM, Random].
+                    .mode (str): Internal optimizer that will be used. Choose between [CEM, Random,SafeOptimizer].
                     .cfg (DotMap): A map of optimizer initializer parameters.
                     .plan_hor (int): The planning horizon that will be used in optimization.
                     .obs_cost_fn (func): A function which computes the cost of every observation
@@ -78,7 +78,6 @@ class MPC(Controller):
                         Warning: Can be very memory-intensive
         """
         super().__init__(params)
-
         self.dO, self.dU = params.env.observation_space.shape[0], params.env.action_space.shape[0]
         self.ac_ub, self.ac_lb = params.env.action_space.high, params.env.action_space.low
         self.ac_ub = np.minimum(self.ac_ub, params.get("ac_ub", self.ac_ub))
