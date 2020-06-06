@@ -135,6 +135,8 @@ class MPC(Controller):
         self.train_targs = np.array([]).reshape(
             0, self.targ_proc(np.zeros([1, self.dO]), np.zeros([1, self.dO])).shape[-1]
         )
+
+        # This is where the optimizer function gets hooked up
         if self.model.is_tf_model:
             self.sy_cur_obs = tf.Variable(np.zeros(self.dO), dtype=tf.float32)
             self.ac_seq = tf.placeholder(shape=[1, self.plan_hor*self.dU], dtype=tf.float32)
@@ -163,7 +165,7 @@ class MPC(Controller):
         this controller switches from applying random actions to using MPC.
 
         Arguments:
-            obs_trajs: A list of observation matrices, observations in rows.
+            obs_trajs: A list of observation matrices, observations in rows. (all observatons from this episode)
             acs_trajs: A list of action matrices, actions in rows.
             rews_trajs: A list of reward arrays.
 
@@ -172,13 +174,17 @@ class MPC(Controller):
         # Construct new training points and add to training set
         new_train_in, new_train_targs = [], []
         for obs, acs in zip(obs_trajs, acs_trajs):
+            # New training data is: [observation, actions] for all timesteps in episode
             new_train_in.append(np.concatenate([self.obs_preproc(obs[:-1]), acs], axis=-1))
+            # The true next state is just the below! so set next_obs=obs[1:]
             new_train_targs.append(self.targ_proc(obs[:-1], obs[1:]))
+            # state, next state, delta, reward
+            # all_the_state = np.concatenate([self.obs_preproc(obs[:-1]), self.obs_preproc(obs[1:]), self.obs_preproc(obs[1:]) - self.obs_preproc(obs[:-1]), np.expand_dims(rews_trajs[0], 1)], axis=-1)
+
         self.train_in = np.concatenate([self.train_in] + new_train_in, axis=0)
         self.train_targs = np.concatenate([self.train_targs] + new_train_targs, axis=0)
 
         # Train the model (jsw: training neural network models)
-        print("MPC train")
         self.model.train(self.train_in, self.train_targs, **self.model_train_cfg)
         self.has_been_trained = True
 
@@ -205,16 +211,25 @@ class MPC(Controller):
         Returns: An action (and possibly the predicted cost)
         """
         if not self.has_been_trained:
-            return np.random.uniform(self.ac_lb, self.ac_ub, self.ac_lb.shape)
+            action = np.random.uniform(self.ac_lb, self.ac_ub, self.ac_lb.shape)
+            if get_pred_cost:
+                return action, 0
+            return action
         if self.ac_buf.shape[0] > 0:
             action, self.ac_buf = self.ac_buf[0], self.ac_buf[1:]
+            if get_pred_cost:
+                return action, 0 #jsw: not sure, but seems necessary
             return action
 
         if self.model.is_tf_model:
             self.sy_cur_obs.load(obs, self.model.sess)
 
+        # prev_sol is initial mean and init_var is initial variance
+        # for two action spaces: x, y for N time steps. so, total of 25*2 elements
         soln = self.optimizer.obtain_solution(self.prev_sol, self.init_var)
+        # returns the new mean of the next 50 steps
         self.prev_sol = np.concatenate([np.copy(soln)[self.per*self.dU:], np.zeros(self.per*self.dU)])
+        # MPC just picks the (x,y) action of the next time step
         self.ac_buf = soln[:self.per*self.dU].reshape(-1, self.dU)
 
         if get_pred_cost and not (self.log_traj_preds or self.log_particles):
@@ -264,6 +279,7 @@ class MPC(Controller):
             )
             self.pred_means, self.pred_vars = [], []
 
+    # The cost function passed to the optimizer
     def _compile_cost(self, ac_seqs, get_pred_trajs=False):
         t, nopt = tf.constant(0), tf.shape(ac_seqs)[0]
         init_costs = tf.zeros([nopt, self.npart])
@@ -282,10 +298,13 @@ class MPC(Controller):
 
             def iteration(t, total_cost, cur_obs, pred_trajs):
                 cur_acs = ac_seqs[t]
+                # 20 partices x MODEL_OUT are the dimensions
+                # _predict_next_obs uses learned mean and var to generate a bunch of predictions
                 next_obs = self._predict_next_obs(cur_obs, cur_acs)
                 delta_cost = tf.reshape(
-                    self.obs_cost_fn(next_obs) + self.ac_cost_fn(cur_acs), [-1, self.npart]
+                    self.obs_cost_fn(next_obs, cur_obs) + self.ac_cost_fn(cur_acs), [-1, self.npart]
                 )
+
                 next_obs = self.obs_postproc2(next_obs)
                 pred_trajs = tf.concat([pred_trajs, next_obs[None]], axis=0)
                 return t + 1, total_cost + delta_cost, next_obs, pred_trajs
@@ -306,7 +325,7 @@ class MPC(Controller):
                 cur_acs = ac_seqs[t]
                 next_obs = self._predict_next_obs(cur_obs, cur_acs)
                 delta_cost = tf.reshape(
-                    self.obs_cost_fn(next_obs) + self.ac_cost_fn(cur_acs), [-1, self.npart]
+                    self.obs_cost_fn(next_obs, cur_obs) + self.ac_cost_fn(cur_acs), [-1, self.npart]
                 )
                 return t + 1, total_cost + delta_cost, self.obs_postproc2(next_obs)
 

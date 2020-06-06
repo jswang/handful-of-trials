@@ -55,7 +55,7 @@ class CartpoleConfigModule:
         return next_obs - obs
 
     @staticmethod
-    def obs_cost_fn(obs):
+    def obs_cost_fn(obs, _):
         if isinstance(obs, np.ndarray):
             return -np.exp(-np.sum(
                 np.square(CartpoleConfigModule._get_ee_pos(obs, are_tensors=False) - np.array([0.0, 0.6])), axis=1

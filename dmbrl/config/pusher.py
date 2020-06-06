@@ -47,10 +47,14 @@ class PusherConfigModule:
     def targ_proc(obs, next_obs):
         return next_obs - obs
 
-    def obs_cost_fn(self, obs):
+    # PE-TS is assuming a known rewards model for use in calculating
+    # which trajectories are best
+    def obs_cost_fn(self, obs, _):
         to_w, og_w = 0.5, 1.25
         tip_pos, obj_pos, goal_pos = obs[:, 14:17], obs[:, 17:20], self.ENV.ac_goal_pos
 
+        # the higher the distance between the tip and object and the higher the dist
+        # between the object and the goal, the higher the cost.
         if isinstance(obs, np.ndarray):
             tip_obj_dist = np.sum(np.abs(tip_pos - obj_pos), axis=1)
             obj_goal_dist = np.sum(np.abs(goal_pos - obj_pos), axis=1)

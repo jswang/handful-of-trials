@@ -56,7 +56,7 @@ class ReacherConfigModule:
         if sess is not None:
             self.goal.load(self.ENV.goal, sess)
 
-    def obs_cost_fn(self, obs):
+    def obs_cost_fn(self, obs, _):
         if isinstance(obs, np.ndarray):
             return np.sum(np.square(ReacherConfigModule.get_ee_pos(obs, are_tensors=False) - self.ENV.goal), axis=1)
         else:

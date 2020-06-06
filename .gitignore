@@ -5,3 +5,6 @@ tags
 __init__.py
 dmbrl/__init__.py
 hand_venv
+data/*
+.ipynb*
+keep_log

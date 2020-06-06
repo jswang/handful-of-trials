@@ -61,7 +61,7 @@ class EnvConfigModule:
         raise NotImplementedError()
 
     @staticmethod
-    def obs_cost_fn(obs):
+    def obs_cost_fn(obs, _):
         # Note: Must be able to process both NumPy and Tensorflow arrays.
         if isinstance(obs, np.ndarray):
             raise NotImplementedError()

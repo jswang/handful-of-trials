@@ -115,7 +115,7 @@ class FC:
         self.weights = tf.get_variable(
             "FC_weights",
             shape=[self.ensemble_size, self.input_dim, self.output_dim],
-            initializer=tf.truncated_normal_initializer(stddev=1/(2*np.sqrt(self.input_dim)))
+            initializer=tf.truncated_normal_initializer(stddev=1/(2*np.sqrt(self.input_dim)), seed=42)
         )
         self.biases = tf.get_variable(
             "FC_biases",

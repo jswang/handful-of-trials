@@ -50,20 +50,21 @@ class Agent:
         video_record = record_fname is not None
         recorder = None if not video_record else VideoRecorder(self.env, record_fname)
 
-        times, rewards = [], []
+        times, rewards, cost = [], [], []
         O, A, reward_sum, done = [self.env.reset()], [], 0, False
 
         policy.reset()
 
+        # for the whole episode, get action from policy and then act
         for t in range(horizon):
             if video_record:
                 recorder.capture_frame()
             start = time.time()
-            # jsw: at this time in the horizon, get an action from the policy.
-            # print("time horizon {}, running MPC".format(t))
-            # jsw: .act() is MPC actually solving limited time optimal control problem
+            # .act() is MPC actually solving limited time optimal control problem
             # for best action given past info and it's planning horizon (plan_hor)
-            A.append(policy.act(O[t], t))
+            a, c = policy.act(O[t], t, get_pred_cost=True) #O[t] is current state
+            A.append(a)
+            # A.append(policy.act(O[t], t))
             times.append(time.time() - start)
             if self.noise_stddev is None:
                 # jsw Using environment to actually step the obs, reward, and info
@@ -76,6 +77,8 @@ class Agent:
             O.append(obs)
             reward_sum += reward
             rewards.append(reward)
+            if 'cost' in info:
+                cost.append(info['cost'])
             if done:
                 break
 
@@ -83,12 +86,10 @@ class Agent:
             recorder.capture_frame()
             recorder.close()
 
-        # print("Average action selection time: ", np.mean(times))
-        # print("Rollout length: ", len(A))
-
         return {
             "obs": np.array(O),
             "ac": np.array(A),
             "reward_sum": reward_sum,
             "rewards": np.array(rewards),
+            "cost": cost
         }
