@@ -8,8 +8,8 @@ import scipy.stats as stats
 import GPy
 from .optimizer import Optimizer
 import tensorflow.contrib.eager as tfe
-from safeopt import SafeOptSwarm
-from safeopt import SafeOpt
+from dmbrl.misc.optimizers.SafeOpt.safeopt.gp_opt import SafeOptSwarm
+
 class SafeOptimizer(Optimizer):
     """A Tensorflow-compatible GP based safe optimizer.
     """
@@ -47,7 +47,7 @@ class SafeOptimizer(Optimizer):
         self.tf_compatible, self.cost_function = None, None
         #Initialization of Points- Custom
         init_pt=np.zeros((sol_dim,1)).T
-        
+
         sample=np.array([[0]])
         #--------------------------
         self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0.001)
@@ -75,10 +75,10 @@ class SafeOptimizer(Optimizer):
                 return tf.logical_and(tf.less(t, self.max_iters), tf.reduce_max(var) > self.epsilon)
 
             def iteration(t, pt, var, best_val, best_sol):
-                
+
                 def step_safeopt(t,pt,cost,best_val,best_sol):
                     print("---------------Step of Safeopt-------------")
-                    
+
                     #Convert to np
                     pt_np=np.array(pt)
                     cost_np=np.array(cost)
@@ -89,7 +89,7 @@ class SafeOptimizer(Optimizer):
                     print("Best Cost: {}".format(best_val))
                     self.opt.add_new_data_point(pt_np,-cost_np)
                     new_pt,stddev=self.opt.get_new_query_point("expanders") # Returns point most likely to expand safe set
-                    
+
                     best_sol2,stddev2=self.opt.get_new_query_point("maximizers") # returns best parameters from current known points
                     #best_sol2=self.opt.optimize(ucb=True)
 
@@ -97,7 +97,7 @@ class SafeOptimizer(Optimizer):
                     print("Expander Point Found: {}".format(new_pt))
                     print("Maximizer Point Point:{}".format(best_sol2))
 
-                     
+
 
                     print("-----------Step Ended------------------")
                     return new_pt,best_sol2
@@ -110,34 +110,34 @@ class SafeOptimizer(Optimizer):
                 new_pt.set_shape(pt.get_shape())
                 new_cost=cost_function(new_pt)
                 new_pt=tf.squeeze(new_pt) # retain shape of pt
-                new_best_cost=tf.squeeze(new_cost) 
+                new_best_cost=tf.squeeze(new_cost)
                 return t + 1, new_pt, var, new_best_cost, best_sol2 # var has no significance
 
             with self.tf_sess.graph.as_default():
                 '''
                 @tf.function
                 def wrapper_func(self):
-                    @tf.function 
+                    @tf.function
                     def initialize_gp_local(init_pt,sample):
                         print("Entered initialize GP Local----------------")
                         init_pt=init_pt.eval()
                         sample=sample.eval()
                         print("Sample cost is -------------------------")
                         print(sample)
-                        self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0.001) 
+                        self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0.001)
                         self.opt=SafeOptSwarm(gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
                         print("Succesfully initialized GP for Safeopt-----------------------------------")
                         return tf.float32(0)
-                    print("Wrapper called")    
-                
+                    print("Wrapper called")
+
                     return tf.py_function(initialize_gp_local,[init_pt,sample],tf.float32)
                     #return initialize_gp_local(init_pt,sample)
-                print("Entered Session----------------------------") 
+                print("Entered Session----------------------------")
                 init_pt=tf.expand_dims(self.init_pt,axis=0) # Necessary to maintain dimensionality
                 sample=-cost_function(init_pt) # cost for init_pt
                 sample=tf.expand_dims(sample,axis=1)
                 '''
-                
+
                 self.num_opt_iters, self.pt, self.var, self.best_val, self.best_sol = tf.while_loop(
                     cond=continue_optimization, body=iteration,
                     loop_vars=[0, self.init_pt, self.init_var, float("inf"), self.init_pt]
@@ -147,9 +147,9 @@ class SafeOptimizer(Optimizer):
         pass
 
     def obtain_solution(self, init_pt, init_var):
-        
-        
-        
+
+
+
         if self.tf_compatible:
             #print(init_pt.get_shape())
             #print(init_var.get_shape())
@@ -159,18 +159,18 @@ class SafeOptimizer(Optimizer):
             )
         else:
             pt, var, t = init_pt, init_var, 0
-            
+
             self.gpmodel=GPy.models.GPRegression(pt,self.cost_function(pt),noise_var=0.001)
-            opt=SafeOptSwarm(self.gpmodel,fmin) 
+            opt=SafeOptSwarm(self.gpmodel,fmin)
 
             while (t < self.max_iters) and np.max(var) > self.epsilon:
-                
+
                 new_pt,std_dev=opt.get_new_query_point("expanders") # Returns point most likely to expand safe set
-                
+
                 best_val,best_sol=opt.get_new_query_point("maximizer") # returns best parameters from current known points
-                
+
                 t += 1
 
-                
+
             sol = best_sol
         return sol
