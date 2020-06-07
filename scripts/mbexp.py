@@ -40,11 +40,12 @@ if __name__ == "__main__":
     parser.add_argument('-logdir', type=str, default='data',
                         help='Directory to which results will be logged (default: ./data)')
     args = parser.parse_args()
+
+    main(args.env, "MPC", args.ctrl_arg, args.override, args.logdir)
     # print("calling main")
     # print(args.ctrl_arg)
     # print(args.override)
     # print(args.logdir)
-    main(args.env, "MPC", args.ctrl_arg, args.override, args.logdir)
 
 # jsw: Manual runs
 # main('cartpole', "MPC",[['model-type', 'P'], ['prop-type', 'DS']] , [['exp_cfg.exp_cfg.ntrain_iters', '2'], ['exp_cfg.sim_cfg.task_hor', '5'], ['ctrl_cfg.opt_cfg.plan_hor', '5']]

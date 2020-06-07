@@ -74,8 +74,8 @@ class CEMOptimizer(Optimizer):
                 lb_dist, ub_dist = mean - self.lb, self.ub - mean
                 constrained_var = tf.minimum(tf.minimum(tf.square(lb_dist / 2), tf.square(ub_dist / 2)), var)
                 samples = tf.truncated_normal([self.popsize, self.sol_dim], mean, tf.sqrt(constrained_var))
-                
-                
+
+
                 def print_cost(t,costs):
                     print("Entered print_cost")
                     costs=np.array(costs)
@@ -91,7 +91,7 @@ class CEMOptimizer(Optimizer):
                 t=tf.convert_to_tensor(t)
                 t.set_shape(t_shape)
                 t=tf.squeeze(t)
-                #------------------------------ 
+                #------------------------------
                 values, indices = tf.nn.top_k(-costs, k=self.num_elites, sorted=True)
 
                 best_val, best_sol = tf.cond(

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 
 import tensorflow as tf
+import tensorflow.contrib.eager as tfe
 import numpy as np
 from scipy.io import savemat
 
@@ -300,9 +301,25 @@ class MPC(Controller):
                 # 20 partices x MODEL_OUT are the dimensions
                 # _predict_next_obs uses learned mean and var to generate a bunch of predictions
                 next_obs = self._predict_next_obs(cur_obs, cur_acs)
+
                 delta_cost = tf.reshape(
                     self.obs_cost_fn(next_obs, cur_obs) + self.ac_cost_fn(cur_acs), [-1, self.npart]
                 )
+
+                #note, must have input and output that are part of tensorflow graph
+                # def print_cost(t, delta_cost, next_obs, cur_obs):
+                #     delta_cost = np.array(tf.identity(delta_cost))
+                #     print(f"Predicted cost: {delta_cost}")
+                #     print(f"cur obs: {cur_obs}")
+                #     print(f"next obs: {next_obs}")
+                #     return t
+
+                # # preserve shapes before call, restore after call
+                # t_shape = t.get_shape()
+                # t = tfe.py_func(func=print_cost, inp=[t, delta_cost, next_obs, cur_obs], Tout=t.dtype)
+                # t = tf.convert_to_tensor(t)
+                # t.set_shape(t_shape)
+                # t=tf.squeeze(t)
 
                 next_obs = self.obs_postproc2(next_obs)
                 pred_trajs = tf.concat([pred_trajs, next_obs[None]], axis=0)
