@@ -9,7 +9,7 @@ import GPy
 from .optimizer import Optimizer
 import tensorflow.contrib.eager as tfe
 from dmbrl.misc.optimizers.SafeOpt.safeopt.gp_opt import SafeOptSwarm
-
+import gc
 class SafeOptimizer(Optimizer):
     """A Tensorflow-compatible GP based safe optimizer.
     """
@@ -106,6 +106,19 @@ class SafeOptimizer(Optimizer):
 
                     best_sol=np.squeeze(best_sol)
                     maxi_sol2=np.squeeze(maxi_sol2)
+                    
+                    if t_np==self.max_iters:
+                        del self.opt
+                        del self.gpmodel
+                        gc.collect()
+                        for name in dir():
+                            if not name.startswith('_'):
+                                del globals()[name]
+
+                        for name in dir():
+                            if not name.startswith('_'):
+                                del locals()[name]
+                    
                     # print("New Expander Point Found: {}".format(new_pt))
                     # print("New Maximizer point found:",maxi_sol2)
                     # print("-----------Step Ended------------------")

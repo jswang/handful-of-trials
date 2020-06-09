@@ -18,7 +18,7 @@ elif [ "$1" = "fast" ]; then
 
 # Safeopt
 elif [ "$1" = "safeopt" ]; then
-    python scripts/mbexp.py -env "$2" -ca opt-type SafeOpt
+    python3 scripts/mbexp.py -env "$2" -ca opt-type SafeOpt
 
 # Run PPO, TRPO, and CPO on safety env
 elif [ "$1" = "run_agents" ]; then
