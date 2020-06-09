@@ -36,7 +36,7 @@ class SafeOptimizer(Optimizer):
         self.bounds = bounds
         self.epsilon, self.beta = epsilon, beta
         self.tf_sess = tf_session
-        self.fmin=-10**10 # change later
+        self.fmin=0 # Lowest reward allowable
         if self.tf_sess is not None:
             with self.tf_sess.graph.as_default():
                 with tf.variable_scope("SafeOptSolver") as scope:
@@ -106,7 +106,7 @@ class SafeOptimizer(Optimizer):
 
                     best_sol=np.squeeze(best_sol)
                     maxi_sol2=np.squeeze(maxi_sol2)
-                    
+
                     if t_np==self.max_iters:
                         del self.opt
                         del self.gpmodel
@@ -118,7 +118,7 @@ class SafeOptimizer(Optimizer):
                         for name in dir():
                             if not name.startswith('_'):
                                 del locals()[name]
-                    
+
                     # print("New Expander Point Found: {}".format(new_pt))
                     # print("New Maximizer point found:",maxi_sol2)
                     # print("-----------Step Ended------------------")
