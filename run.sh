@@ -26,9 +26,9 @@ elif [ "$1" = "run_agents" ]; then
     python test_other_agents.py --algo 'ppo'
     python test_other_agents.py --algo 'cpo'
 elif [ "$1" = "plot" ]; then
-    python plot.py data/2020-06-07_trpo_PointSafety/ --savedir 'data' --title 'TRPO Safety Point Goal 1' --dont_show
-    python plot.py data/2020-06-07_cpo_PointSafety/ --savedir 'data' --title 'CPO Safety Point Goal 1' --dont_show
-    python plot.py data/2020-06-07sour_ppo_PointSafety/ --savedir 'data' --title 'PPO Safety Point Goal 1' --dont_show
+    python plot.py data/2020-06-07_trpo_PointSafety/ --savedir 'data/other_agents' --title 'TRPO Safety Point Goal 1' --dont_show
+    python plot.py data/2020-06-07_cpo_PointSafety/ --savedir 'data/other_agents' --title 'CPO Safety Point Goal 1' --dont_show
+    python plot.py data/2020-06-07sour_ppo_PointSafety/ --savedir 'data/other_agents' --title 'PPO Safety Point Goal 1' --dont_show
 else
     echo "Options: plot, run_agents, safety_point_goal_1, cartpole, pretrain <env>, fast <env>"
 fi
