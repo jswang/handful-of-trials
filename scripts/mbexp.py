@@ -29,26 +29,26 @@ def main(env, ctrl_type, ctrl_args, overrides, logdir):
     exp.run_experiment()
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-env', type=str, required=True,
-                        help='Environment name: select from [cartpole, reacher, pusher, halfcheetah, safety_point_goal_1]')
-    parser.add_argument('-ca', '--ctrl_arg', action='append', nargs=2, default=[],
-                        help='Controller arguments, see https://github.com/kchua/handful-of-trials#controller-arguments')
-    parser.add_argument('-o', '--override', action='append', nargs=2, default=[],
-                        help='Override default parameters, see https://github.com/kchua/handful-of-trials#overrides')
-    parser.add_argument('-logdir', type=str, default='data',
-                        help='Directory to which results will be logged (default: ./data)')
-    args = parser.parse_args()
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('-env', type=str, required=True,
+#                         help='Environment name: select from [cartpole, reacher, pusher, halfcheetah, safety_point_goal_1]')
+#     parser.add_argument('-ca', '--ctrl_arg', action='append', nargs=2, default=[],
+#                         help='Controller arguments, see https://github.com/kchua/handful-of-trials#controller-arguments')
+#     parser.add_argument('-o', '--override', action='append', nargs=2, default=[],
+#                         help='Override default parameters, see https://github.com/kchua/handful-of-trials#overrides')
+#     parser.add_argument('-logdir', type=str, default='data',
+#                         help='Directory to which results will be logged (default: ./data)')
+#     args = parser.parse_args()
 
-    main(args.env, "MPC", args.ctrl_arg, args.override, args.logdir)
-    # print("calling main")
-    # print(args.ctrl_arg)
-    # print(args.override)
-    # print(args.logdir)
+#     main(args.env, "MPC", args.ctrl_arg, args.override, args.logdir)
+#     # print("calling main")
+#     # print(args.ctrl_arg)
+#     # print(args.override)
+#     # print(args.logdir)
 
 # jsw: Manual runs
-# main('cartpole', "MPC",[['model-type', 'P'], ['prop-type', 'DS']] , [['exp_cfg.exp_cfg.ntrain_iters', '2'], ['exp_cfg.sim_cfg.task_hor', '5'], ['ctrl_cfg.opt_cfg.plan_hor', '5']]
-# , './data')
+main('cartpole', "MPC", [], [],  './data/tmp')
+# main('cartpole', "MPC", './data/tmp')
 # main('safety_point_goal_1', "MPC",[['model-type', 'P'], ['prop-type', 'DS']] , [['exp_cfg.exp_cfg.ntrain_iters', '2'], ['exp_cfg.sim_cfg.task_hor', '5'], ['ctrl_cfg.opt_cfg.plan_hor', '5']]
 # , './data')

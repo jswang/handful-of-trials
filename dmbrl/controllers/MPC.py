@@ -9,13 +9,13 @@ import tensorflow.contrib.eager as tfe
 import numpy as np
 from scipy.io import savemat
 
-from .Controller import Controller
+from dmbrl.controllers.Controller import Controller
 from dmbrl.misc.DotmapUtils import get_required_argument
 from dmbrl.misc.optimizers import RandomOptimizer, CEMOptimizer
 from dmbrl.misc.optimizers.safeopt_code import SafeOptimizer
 
 class MPC(Controller):
-    optimizers = {"CEM": CEMOptimizer, "Random": RandomOptimizer,"SafeOpt":SafeOptimizer}
+    optimizers = {"CEM": CEMOptimizer, "Random": RandomOptimizer, "SafeOpt":SafeOptimizer}
 
     def __init__(self, params):
         """Creates class instance.
@@ -224,14 +224,17 @@ class MPC(Controller):
         if self.model.is_tf_model:
             self.sy_cur_obs.load(obs, self.model.sess)
 
-        # prev_sol is initial mean and init_var is initial variance
-        # for two action spaces: x, y for N time steps. so, total of 25*2 elements
+        # Optimizer returns the best sequence of 25 actions from this timestep
+        # decided based on the simulated dynamics.
+        # for 2-d action space: (x, y) for N time steps. So, total of 25*2 elements
         soln = self.optimizer.obtain_solution(self.prev_sol, self.init_var)
         # returns the new mean of the next 50 steps
         self.prev_sol = np.concatenate([np.copy(soln)[self.per*self.dU:], np.zeros(self.per*self.dU)])
         # MPC just picks the (x,y) action of the next time step
         self.ac_buf = soln[:self.per*self.dU].reshape(-1, self.dU)
 
+        # Retroactively go back and figure out the cost of this action sequence
+        # returned by the optimizer. Calls _compile_cost, a tensorflow function
         if get_pred_cost and not (self.log_traj_preds or self.log_particles):
             if self.model.is_tf_model:
                 pred_cost = self.model.sess.run(
@@ -309,9 +312,9 @@ class MPC(Controller):
                 #note, must have input and output that are part of tensorflow graph
                 # def print_cost(t, delta_cost, next_obs, cur_obs):
                 #     delta_cost = np.array(tf.identity(delta_cost))
-                #     print(f"Predicted cost: {delta_cost}")
-                #     print(f"cur obs: {cur_obs}")
-                #     print(f"next obs: {next_obs}")
+                #     print(f"Predicted cost next action: {delta_cost[0]}")
+                #     # print(f"cur obs: {cur_obs}")
+                #     # print(f"next obs: {next_obs}")
                 #     return t
 
                 # # preserve shapes before call, restore after call
@@ -335,6 +338,7 @@ class MPC(Controller):
             # Replace nan costs with very high cost
             costs = tf.reduce_mean(tf.where(tf.is_nan(costs), 1e6 * tf.ones_like(costs), costs), axis=1)
             pred_trajs = tf.reshape(pred_trajs, [self.plan_hor + 1, -1, self.npart, self.dO])
+            # print(f"pred_trajs.shape: {pred_trajs.shape}")
             return costs, pred_trajs
         else:
             def iteration(t, total_cost, cur_obs):
