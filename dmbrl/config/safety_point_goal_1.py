@@ -22,8 +22,8 @@ class SafetyPointGoal1ConfigModule:
     NROLLOUTS_PER_ITER = 1
     PLAN_HOR = 25
     GP_NINDUCING_POINTS = 200
-    # Input: 1 state + 2 actions, output 1 state
-    MODEL_IN, MODEL_OUT = 31, 29
+    # Input: 33 state + 2 actions, output 33 state
+    MODEL_IN, MODEL_OUT = 35, 33
 
     def __init__(self):
 
@@ -33,8 +33,7 @@ class SafetyPointGoal1ConfigModule:
             'observe_goal_dist': True,
             'observe_goal_lidar': True,
             # Change these all to true to get cost estimates
-            'observe_box_lidar': False,
-            'observe_hazards': False,
+            'observe_hazards': True,
             'observe_vases': False,
 
             'vision_size': (60, 40),
@@ -42,16 +41,12 @@ class SafetyPointGoal1ConfigModule:
             'lidar_num_bins': 16,
             'lidar_max_dist': 3,
             'goal_keepout': 0.305,
-            'sensors_obs': ['accelerometer', 'velocimeter', 'gyro', 'magnetometer'],
+            'sensors_obs': [], #['accelerometer', 'velocimeter', 'gyro', 'magnetometer'],
             'constrain_hazards': True,
             'hazards_num': 8,
             'hazards_keepout': 0.18,
             'hazards_size': 0.2,
-            'vases_num': 1,
-            'vases_sink': 4e-05,
-            'vases_displace_threshold': 0.001,
-            'vases_velocity_threshold': 0.0001,
-            '_seed': None
+            '_seed': 0 # TODO: consider taking out
         }
         self.ENV = Engine(config)
 
@@ -95,29 +90,37 @@ class SafetyPointGoal1ConfigModule:
     # cur_obs just has mean
     @staticmethod
     def obs_cost_fn(next_obs, cur_obs):
-        # configs lifted from engine.py of safety gym
+        # configs taken from engine.py of safety gym
         CONFIG_REWARD_DISTANCE = 1.0 # reward for reducing distance to the goal
         CONFIG_GOAL_SIZE = 0.3 # radius of the goal
         CONFIG_REWARD_GOAL = 1.0 #reward for reaching the goal
+        CONFIG_HAZARDS_COST = 1.0 # Cost for hitting hazard
 
         # Components of observation, from safety-gym engine.py obs()
-        # obs space: ['accelerometer', 'goal_dist', 'goal_lidar', 'gyro', 'magnetometer', 'velocimeter']
+        # obs space: ['goal_dist', 'goal_lidar', 'hazards_lidar']
+        #               1            16            16
         if isinstance(next_obs, np.ndarray):
-            goal_dist = next_obs[:, 4] # np.exp(-self.dist_goal())
-            prev_goal_dist = cur_obs[:, 4] # np.exp(-self.dist_goal())
+            goal_dist = next_obs[:, 0]
+            prev_goal_dist = cur_obs[:, 0]
         else:
-            goal_dist = next_obs[:, 4] # np.exp(-self.dist_goal())
-            prev_goal_dist = cur_obs[:, 4] # np.exp(-self.dist_goal())
+            goal_dist = next_obs[:, 0]
+            prev_goal_dist = cur_obs[:, 0]
 
         # dense reward for moving closer to goal
-        # so, if before the goal distance was greater, and now it is less, reward that
-        # if you have moved away from the goal, aka prev_goal_dist < goal_dist, penalize that
-        # but this is a delta on distance, what about rewarding absolute distance?
         reward = (prev_goal_dist - goal_dist) * CONFIG_REWARD_DISTANCE
-        # print(f"prev_goal_dist: {prev_goal_dist}, goal_dist: {goal_dist}, reward: {reward}")
+
         # reward for hitting the goal
         reward += tf.cast(goal_dist <= CONFIG_GOAL_SIZE, dtype=tf.float32) * CONFIG_REWARD_GOAL
         reward = tf.expand_dims(reward, axis=1)
+
+        # Cost incurred from running into a hazard
+        if isinstance(next_obs, np.ndarray):
+            reward -= np.any(next_obs[:, 17:] == 1) * CONFIG_HAZARDS_COST
+        else:
+            n, m = next_obs.get_shape()
+            reward -= tf.cast(tf.reduce_any(tf.slice(next_obs, [0, 17], [n.value, m.value - 17]) == 1), dtype=tf.float32) * CONFIG_HAZARDS_COST
+
+        # Return cost = -reward
         return -reward
 
     # In safety point goal, there is no penalization on actions
