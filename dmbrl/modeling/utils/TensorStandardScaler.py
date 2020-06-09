@@ -18,7 +18,7 @@ class TensorStandardScaler:
         Returns: None.
         """
         self.fitted = False
-        with tf.variable_scope("Scaler"):
+        with tf.compat.v1.variable_scope("Scaler"):
             self.mu = tf.compat.v1.get_variable(
                 name="scaler_mu", shape=[1, x_dim], initializer=tf.constant_initializer(0.0),
                 trainable=False
@@ -44,8 +44,8 @@ class TensorStandardScaler:
         sigma = np.std(data, axis=0, keepdims=True)
         sigma[sigma < 1e-12] = 1.0
 
-        self.mu.load(mu)
-        self.sigma.load(sigma)
+        self.mu.assign(mu)
+        self.sigma.assign(sigma)
         self.fitted = True
         self.cache()
 
@@ -89,5 +89,5 @@ class TensorStandardScaler:
 
         Returns: None.
         """
-        self.mu.load(self.cached_mu)
-        self.sigma.load(self.cached_sigma)
+        self.mu.assign(self.cached_mu)
+        self.sigma.assign(self.cached_sigma)

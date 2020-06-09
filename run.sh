@@ -3,7 +3,6 @@
 # Make sure virtual env is activated
 # source hand_venv/bin/activate
 
-
 # Vanilla pets on cartpole
 if [ "$1" = "cartpole" ]; then
     python scripts/mbexp.py -env cartpole
@@ -15,9 +14,9 @@ elif [ "$1" = "pretrain" ]; then
     python scripts/mbexp.py -env "$2" -o exp_cfg.exp_cfg.ninit_rollouts 10 -o exp_cfg.exp_cfg.ntrain_iters 1 -o ctrl_cfg.prop_cfg.model_init_cfg.model_dir "data/train_val/$2" -o ctrl_cfg.prop_cfg.model_train_cfg.epochs 10 -o ctrl_cfg.prop_cfg.model_train_cfg.holdout_ratio .2
 # Fast run Cartpole task horizon=5 (i/o 200), MPC planning horizon=5 (i/o 25)
 elif [ "$1" = "fast" ]; then
-    python scripts/mbexp.py -env "$2" -ca model-type P -ca prop-type DS -o exp_cfg.exp_cfg.ntrain_iters 2 -o exp_cfg.sim_cfg.task_hor 5 -o ctrl_cfg.opt_cfg.plan_hor 5
+    python scripts/mbexp.py -env "$2" -o exp_cfg.exp_cfg.ntrain_iters 1 -o exp_cfg.sim_cfg.task_hor 1 -o ctrl_cfg.opt_cfg.plan_hor 1 -logdir "data/tmp"
 
-# Safetopt
+# Safeopt
 elif [ "$1" = "safeopt" ]; then
     python scripts/mbexp.py -env "$2" -ca opt-type SafeOpt
 
@@ -34,32 +33,7 @@ else
     echo "Options: plot, run_agents, safety_point_goal_1, cartpole, pretrain <env>, fast <env>"
 fi
 
-
-#Notes
-# planning horizon vs. task horizon?
-# planning horizon is how far in advance MPC plans for
-# task horizon is how many to mess around in the environment for
-
-# model-type:
-# D deterministic networks
-# P probabilistic networks
-# DE Deterministic ensemble
-# PE Probabilistic ensemble (default)
-
-# prop-type:
-# E: deterministic
-# DS: distribution sampling
-# TS1: Trajectory sampling 1
-# TSinf: Trajectory sampling infinite
-# MM: Moment matching
-
-#allowed combos:
-# D-E : deterministic network and propagation
-# P-E, P_DS, P-MM: Prob.All expectation, dist sampling, and moment matching
-# DE-*: Can do all propagation types
-# PE-*: Can do all propagation types
-
-#Default settings
+# Default settings
 # {'ctrl_cfg': {'env': <dmbrl.env.cartpole.CartpoleEnv object at 0x7fae5fe8d470>,
 #               'opt_cfg': {'ac_cost_fn': <function CartpoleConfigModule.ac_cost_fn at 0x7fae6010b840>,
 #                           'cfg': {'alpha': 0.1,

@@ -15,23 +15,23 @@ from safe_rl.utils.logx import EpochLogger
 from safe_rl.utils.mpi_tf import MpiAdamOptimizer, sync_all_params
 from safe_rl.utils.mpi_tools import mpi_fork, proc_id, num_procs, mpi_sum
 
-# Multi-purpose agent runner for policy optimization algos 
+# Multi-purpose agent runner for policy optimization algos
 # (PPO, TRPO, their primal-dual equivalents, CPO)
-def run_polopt_agent(env_fn, 
+def run_polopt_agent(env_fn,
                      agent=PPOAgent(),
-                     actor_critic=mlp_actor_critic, 
-                     ac_kwargs=dict(), 
+                     actor_critic=mlp_actor_critic,
+                     ac_kwargs=dict(),
                      seed=0,
                      render=False,
                      # Experience collection:
-                     steps_per_epoch=4000, 
-                     epochs=50, 
+                     steps_per_epoch=4000,
+                     epochs=50,
                      max_ep_len=1000,
                      # Discount factors:
-                     gamma=0.99, 
+                     gamma=0.99,
                      lam=0.97,
-                     cost_gamma=0.99, 
-                     cost_lam=0.97, 
+                     cost_gamma=0.99,
+                     cost_lam=0.97,
                      # Policy learning:
                      ent_reg=0.,
                      # Cost constraints / penalties:
@@ -39,13 +39,13 @@ def run_polopt_agent(env_fn,
                      penalty_init=1.,
                      penalty_lr=5e-2,
                      # KL divergence:
-                     target_kl=0.01, 
+                     target_kl=0.01,
                      # Value learning:
                      vf_lr=1e-3,
-                     vf_iters=80, 
+                     vf_iters=80,
                      # Logging:
-                     logger=None, 
-                     logger_kwargs=dict(), 
+                     logger=None,
+                     logger_kwargs=dict(),
                      save_freq=1
                      ):
 
@@ -79,8 +79,8 @@ def run_polopt_agent(env_fn,
     adv_ph, cadv_ph, ret_ph, cret_ph, logp_old_ph = placeholders(*(None for _ in range(5)))
 
     # Inputs to computation graph for special purposes
-    surr_cost_rescale_ph = tf.placeholder(tf.float32, shape=())
-    cur_cost_ph = tf.placeholder(tf.float32, shape=())
+    surr_cost_rescale_ph = tf.compat.v1.placeholder(tf.float32, shape=())
+    cur_cost_ph = tf.compat.v1.placeholder(tf.float32, shape=())
 
     # Outputs from actor critic
     ac_outs = actor_critic(x_ph, a_ph, **ac_kwargs)
@@ -91,8 +91,8 @@ def run_polopt_agent(env_fn,
     buf_phs += values_as_sorted_list(pi_info_phs)
 
     # Organize symbols we have to compute at each step of acting in env
-    get_action_ops = dict(pi=pi, 
-                          v=v, 
+    get_action_ops = dict(pi=pi,
+                          v=v,
                           logp_pi=logp_pi,
                           pi_info=pi_info)
 
@@ -121,10 +121,10 @@ def run_polopt_agent(env_fn,
     local_steps_per_epoch = int(steps_per_epoch / num_procs())
     pi_info_shapes = {k: v.shape.as_list()[1:] for k,v in pi_info_phs.items()}
     buf = CPOBuffer(local_steps_per_epoch,
-                    obs_shape, 
-                    act_shape, 
-                    pi_info_shapes, 
-                    gamma, 
+                    obs_shape,
+                    act_shape,
+                    pi_info_shapes,
+                    gamma,
                     lam,
                     cost_gamma,
                     cost_lam)
@@ -135,10 +135,10 @@ def run_polopt_agent(env_fn,
     #=========================================================================#
 
     if agent.use_penalty:
-        with tf.variable_scope('penalty'):
+        with tf.compat.v1.variable_scope('penalty'):
             # param_init = np.log(penalty_init)
             param_init = np.log(max(np.exp(penalty_init)-1, 1e-8))
-            penalty_param = tf.get_variable('penalty_param',
+            penalty_param = tf.compat.v1.get_variable('penalty_param',
                                           initializer=float(param_init),
                                           trainable=agent.learn_penalty,
                                           dtype=tf.float32)
@@ -162,8 +162,8 @@ def run_polopt_agent(env_fn,
 
     # Surrogate advantage / clipped surrogate advantage
     if agent.clipped_adv:
-        min_adv = tf.where(adv_ph>0, 
-                           (1+agent.clip_ratio)*adv_ph, 
+        min_adv = tf.where(adv_ph>0,
+                           (1+agent.clip_ratio)*adv_ph,
                            (1-agent.clip_ratio)*adv_ph
                            )
         surr_adv = tf.reduce_mean(tf.minimum(ratio * adv_ph, min_adv))
@@ -220,9 +220,9 @@ def run_polopt_agent(env_fn,
         raise NotImplementedError
 
     # Provide training package to agent
-    training_package.update(dict(pi_loss=pi_loss, 
+    training_package.update(dict(pi_loss=pi_loss,
                                  surr_cost=surr_cost,
-                                 d_kl=d_kl, 
+                                 d_kl=d_kl,
                                  target_kl=target_kl,
                                  cost_lim=cost_lim))
     agent.prepare_update(training_package)
@@ -250,7 +250,7 @@ def run_polopt_agent(env_fn,
     #  Create session, sync across procs, and set up saver                    #
     #=========================================================================#
 
-    sess = tf.Session()
+    sess = tf.compat.v1.Session()
     sess.run(tf.global_variables_initializer())
 
     # Sync params across processes
@@ -353,9 +353,9 @@ def run_polopt_agent(env_fn,
             # Possibly render
             if render and proc_id()==0 and t < 1000:
                 env.render()
-            
+
             # Get outputs from policy
-            get_action_outs = sess.run(get_action_ops, 
+            get_action_outs = sess.run(get_action_ops,
                                        feed_dict={x_ph: o[np.newaxis]})
             a = get_action_outs['pi']
             v_t = get_action_outs['v']
@@ -532,11 +532,11 @@ if __name__ == '__main__':
     run_polopt_agent(lambda : gym.make(args.env),
                      agent=agent,
                      actor_critic=mlp_actor_critic,
-                     ac_kwargs=dict(hidden_sizes=[args.hid]*args.l), 
-                     seed=args.seed, 
-                     render=args.render, 
+                     ac_kwargs=dict(hidden_sizes=[args.hid]*args.l),
+                     seed=args.seed,
+                     render=args.render,
                      # Experience collection:
-                     steps_per_epoch=args.steps, 
+                     steps_per_epoch=args.steps,
                      epochs=args.epochs,
                      max_ep_len=args.len,
                      # Discount factors:
@@ -546,7 +546,7 @@ if __name__ == '__main__':
                      ent_reg=args.entreg,
                      # KL Divergence:
                      target_kl=args.kl,
-                     cost_lim=args.cost_lim, 
+                     cost_lim=args.cost_lim,
                      # Logging:
                      logger_kwargs=logger_kwargs,
                      save_freq=1

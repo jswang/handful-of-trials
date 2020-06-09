@@ -12,7 +12,7 @@ from safe_rl.utils.mpi_tools import mpi_fork, mpi_sum, proc_id, mpi_statistics_s
 EPS = 1e-8
 
 def placeholder(dim=None):
-    return tf.placeholder(dtype=tf.float32, shape=(None,dim) if dim else (None,))
+    return tf.compat.v1.placeholder(dtype=tf.float32, shape=(None,dim) if dim else (None,))
 
 def placeholders(*args):
     return [placeholder(dim) for dim in args]
@@ -62,7 +62,7 @@ def mlp_gaussian_policy(x, a, hidden_sizes, activation, output_activation):
     log_std = tf.clip_by_value(log_std, LOG_STD_MIN, LOG_STD_MAX)
 
     std = tf.exp(log_std)
-    pi = mu + tf.random_normal(tf.shape(mu)) * std
+    pi = mu + tf.compat.v1.random.normal(tf.shape(mu)) * std
     logp_pi = gaussian_likelihood(pi, mu, log_std)
     return mu, pi, logp_pi
 
@@ -82,7 +82,7 @@ Actors and Critics
 def mlp_actor(x, a, name='pi', hidden_sizes=(256,256), activation=tf.nn.relu,
               output_activation=None, policy=mlp_gaussian_policy, action_space=None):
     # policy
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         mu, pi, logp_pi = policy(x, a, hidden_sizes, activation, output_activation)
         mu, pi, logp_pi = apply_squashing_func(mu, pi, logp_pi)
 
@@ -102,10 +102,10 @@ def mlp_critic(x, a, pi, name, hidden_sizes=(256,256), activation=tf.nn.relu,
                                        activation=activation,
                                        output_activation=None),
                                    axis=1)
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
         critic = fn_mlp(tf.concat([x,a], axis=-1))
 
-    with tf.variable_scope(name, reuse=True):
+    with tf.compat.v1.variable_scope(name, reuse=True):
         critic_pi = fn_mlp(tf.concat([x,pi], axis=-1))
 
     return critic, critic_pi
@@ -152,7 +152,7 @@ def sac(env_fn, actor_fn=mlp_actor, critic_fn=mlp_critic, ac_kwargs=dict(), seed
         steps_per_epoch=1000, epochs=100, replay_size=int(1e6), gamma=0.99,
         polyak=0.995, lr=1e-4, batch_size=1024, local_start_steps=int(1e3),
         max_ep_len=1000, logger_kwargs=dict(), save_freq=10, local_update_after=int(1e3),
-        update_freq=1, render=False, 
+        update_freq=1, render=False,
         fixed_entropy_bonus=None, entropy_constraint=-1.0,
         fixed_cost_penalty=None, cost_constraint=None, cost_lim=None,
         reward_scale=1,
@@ -285,28 +285,28 @@ def sac(env_fn, actor_fn=mlp_actor, critic_fn=mlp_critic, ac_kwargs=dict(), seed
     x_ph, a_ph, x2_ph, r_ph, d_ph, c_ph = placeholders(obs_dim, act_dim, obs_dim, None, None, None)
 
     # Main outputs from computation graph
-    with tf.variable_scope('main'):
+    with tf.compat.v1.variable_scope('main'):
         mu, pi, logp_pi = actor_fn(x_ph, a_ph, **ac_kwargs)
         qr1, qr1_pi = critic_fn(x_ph, a_ph, pi, name='qr1', **ac_kwargs)
         qr2, qr2_pi = critic_fn(x_ph, a_ph, pi, name='qr2', **ac_kwargs)
         qc, qc_pi = critic_fn(x_ph, a_ph, pi, name='qc', **ac_kwargs)
 
-    with tf.variable_scope('main', reuse=True):
+    with tf.compat.v1.variable_scope('main', reuse=True):
         # Additional policy output from a different observation placeholder
         # This lets us do separate optimization updates (actor, critics, etc)
         # in a single tensorflow op.
         _, pi2, logp_pi2 = actor_fn(x2_ph, a_ph, **ac_kwargs)
 
     # Target value network
-    with tf.variable_scope('target'):
+    with tf.compat.v1.variable_scope('target'):
         _, qr1_pi_targ = critic_fn(x2_ph, a_ph, pi2, name='qr1', **ac_kwargs)
         _, qr2_pi_targ = critic_fn(x2_ph, a_ph, pi2, name='qr2', **ac_kwargs)
         _, qc_pi_targ = critic_fn(x2_ph, a_ph, pi2, name='qc', **ac_kwargs)
 
     # Entropy bonus
     if fixed_entropy_bonus is None:
-        with tf.variable_scope('entreg'):
-            soft_alpha = tf.get_variable('soft_alpha',
+        with tf.compat.v1.variable_scope('entreg'):
+            soft_alpha = tf.compat.v1.get_variable('soft_alpha',
                                          initializer=0.0,
                                          trainable=True,
                                          dtype=tf.float32)
@@ -318,8 +318,8 @@ def sac(env_fn, actor_fn=mlp_actor, critic_fn=mlp_critic, ac_kwargs=dict(), seed
     # Cost penalty
     if use_costs:
         if fixed_cost_penalty is None:
-            with tf.variable_scope('costpen'):
-                soft_beta = tf.get_variable('soft_beta',
+            with tf.compat.v1.variable_scope('costpen'):
+                soft_beta = tf.compat.v1.get_variable('soft_beta',
                                              initializer=0.0,
                                              trainable=True,
                                              dtype=tf.float32)
@@ -337,7 +337,7 @@ def sac(env_fn, actor_fn=mlp_actor, critic_fn=mlp_critic, ac_kwargs=dict(), seed
 
     # Count variables
     if proc_id()==0:
-        var_counts = tuple(count_vars(scope) for scope in 
+        var_counts = tuple(count_vars(scope) for scope in
                            ['main/pi', 'main/qr1', 'main/qr2', 'main/qc', 'main'])
         print(('\nNumber of parameters: \t pi: %d, \t qr1: %d, \t qr2: %d, \t qc: %d, \t total: %d\n')%var_counts)
 
@@ -410,7 +410,7 @@ def sac(env_fn, actor_fn=mlp_actor, critic_fn=mlp_critic, ac_kwargs=dict(), seed
     # As a shortcut, use our exponential moving average update w/ coefficient zero
     target_init = get_target_update('main', 'target', 0.0)
 
-    sess = tf.Session()
+    sess = tf.compat.v1.Session()
     sess.run(tf.global_variables_initializer())
     sess.run(target_init)
 

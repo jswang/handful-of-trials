@@ -24,7 +24,7 @@ class ReacherConfigModule:
     def __init__(self):
         self.ENV = gym.make(self.ENV_NAME)
         self.ENV.reset()
-        cfg = tf.ConfigProto()
+        cfg = tf.compat.v1.ConfigProto()
         cfg.gpu_options.allow_growth = True
         self.SESS =  tf.compat.v1.Session(config=cfg)
         self.NN_TRAIN_CFG = {"epochs": 5}

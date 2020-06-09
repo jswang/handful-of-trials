@@ -20,7 +20,7 @@ class TFGP:
                 .kernel_class (class): Kernel class
                 .kernel_args (args): Kernel args
                 .num_inducing_points (int): Number of inducing points
-                .sess (tf.Session): Tensorflow session
+                .sess (tf.compat.v1.Session): Tensorflow session
         """
         self.name = params.get("name", "GP")
         self.kernel_class = get_required_argument(params, "kernel_class", "Must provide kernel class.")
@@ -30,14 +30,14 @@ class TFGP:
         )
 
         if params.get("sess", None) is None:
-            config = tf.ConfigProto()
+            config = tf.compat.v1.ConfigProto()
             config.gpu_options.allow_growth = True
-            self._sess = tf.Session(config=config)
+            self._sess = tf.compat.v1.Session(config=config)
         else:
             self._sess = params.get("sess")
 
         with self._sess.as_default():
-            with tf.variable_scope(self.name):
+            with tf.compat.v1.variable_scope(self.name):
                 output_dim = self.kernel_args["output_dim"]
                 del self.kernel_args["output_dim"]
                 self.model = gpflow.models.SGPR(

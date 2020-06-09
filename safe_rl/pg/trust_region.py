@@ -16,7 +16,7 @@ def flat_grad(f, params):
 def hessian_vector_product(f, params):
     # for H = grad**2 f, compute Hx
     g = flat_grad(f, params)
-    x = tf.placeholder(tf.float32, shape=g.shape)
+    x = tf.compat.v1.placeholder(tf.float32, shape=g.shape)
     return x, flat_grad(tf.reduce_sum(g*x), params)
 
 def assign_params_from_flat(x, params):

@@ -21,7 +21,7 @@ class SafeOptimizer(Optimizer):
             sol_dim (int): The dimensionality of the problem space
             max_iters (int): The maximum number of iterations to perform during optimization
             SwarmSize (int): Swarm size of approximate GP optimizer
-            tf_session (tf.Session): (optional) Session to be used for this optimizer. Defaults to None,
+            tf_session (tf.compat.v1.Session): (optional) Session to be used for this optimizer. Defaults to None,
                 in which case any functions passed in cannot be tf.Tensor-valued.
             bounds (2x1 np.array): bounds for action space
             epsilon (float): A minimum variance. If the maximum variance drops below epsilon, optimization is
@@ -39,9 +39,9 @@ class SafeOptimizer(Optimizer):
         self.fmin=-10**6 # change later
         if self.tf_sess is not None:
             with self.tf_sess.graph.as_default():
-                with tf.variable_scope("SafeOptSolver") as scope:
-                    self.init_pt = tf.placeholder(dtype=tf.float32, shape=[sol_dim])
-                    self.init_var = tf.placeholder(dtype=tf.float32, shape=[sol_dim])
+                with tf.compat.v1.variable_scope("SafeOptSolver") as scope:
+                    self.init_pt = tf.compat.v1.placeholder(dtype=tf.float32, shape=[sol_dim])
+                    self.init_var = tf.compat.v1.placeholder(dtype=tf.float32, shape=[sol_dim])
 
         self.num_opt_iters, self.pt, self.var = None, None, None
         self.tf_compatible, self.cost_function = None, None

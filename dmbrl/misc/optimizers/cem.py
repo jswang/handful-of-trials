@@ -42,9 +42,9 @@ class CEMOptimizer(Optimizer):
 
         if self.tf_sess is not None:
             with self.tf_sess.graph.as_default():
-                with tf.variable_scope("CEMSolver") as scope:
-                    self.init_mean = tf.placeholder(dtype=tf.float32, shape=[sol_dim])
-                    self.init_var = tf.placeholder(dtype=tf.float32, shape=[sol_dim])
+                with tf.compat.v1.variable_scope("CEMSolver") as scope:
+                    self.init_mean = tf.compat.v1.placeholder(dtype=tf.float32, shape=[sol_dim])
+                    self.init_var = tf.compat.v1.placeholder(dtype=tf.float32, shape=[sol_dim])
 
         self.num_opt_iters, self.mean, self.var = None, None, None
         self.tf_compatible, self.cost_function = None, None
@@ -73,7 +73,7 @@ class CEMOptimizer(Optimizer):
             def iteration(t, mean, var, best_val, best_sol):
                 lb_dist, ub_dist = mean - self.lb, self.ub - mean
                 constrained_var = tf.minimum(tf.minimum(tf.square(lb_dist / 2), tf.square(ub_dist / 2)), var)
-                samples = tf.truncated_normal([self.popsize, self.sol_dim], mean, tf.sqrt(constrained_var))
+                samples = tf.random.truncated_normal([self.popsize, self.sol_dim], mean, tf.sqrt(constrained_var))
 
 
                 def print_cost(t,costs):

@@ -9,7 +9,7 @@ Network utils
 """
 
 def placeholder(dim=None):
-    return tf.placeholder(dtype=tf.float32, shape=combined_shape(None,dim))
+    return tf.compat.v1.placeholder(dtype=tf.float32, shape=combined_shape(None,dim))
 
 def placeholders(*args):
     return [placeholder(dim) for dim in args]
@@ -18,7 +18,7 @@ def placeholder_from_space(space):
     if isinstance(space, Box):
         return placeholder(space.shape)
     elif isinstance(space, Discrete):
-        return tf.placeholder(dtype=tf.int32, shape=(None,))
+        return tf.compat.v1.placeholder(dtype=tf.int32, shape=(None,))
     raise NotImplementedError('bad space {}'.format(space))
 
 def placeholders_from_spaces(*args):
@@ -97,9 +97,9 @@ def mlp_categorical_policy(x, a, hidden_sizes, activation, output_activation, ac
 def mlp_gaussian_policy(x, a, hidden_sizes, activation, output_activation, action_space):
     act_dim = a.shape.as_list()[-1]
     mu = mlp(x, list(hidden_sizes)+[act_dim], activation, output_activation)
-    log_std = tf.get_variable(name='log_std', initializer=-0.5*np.ones(act_dim, dtype=np.float32))
+    log_std = tf.compat.v1.get_variable(name='log_std', initializer=-0.5*np.ones(act_dim, dtype=np.float32))
     std = tf.exp(log_std)
-    pi = mu + tf.random_normal(tf.shape(mu)) * std
+    pi = mu + tf.compat.v1.random.normal(tf.shape(mu)) * std
     logp = gaussian_likelihood(a, mu, log_std)
     logp_pi = gaussian_likelihood(pi, mu, log_std)
 
@@ -127,7 +127,7 @@ def mlp_squashed_gaussian_policy(x, a, hidden_sizes, activation, output_activati
     log_std = tf.clip_by_value(log_std, LOG_STD_MIN, LOG_STD_MAX)
 
     std = tf.exp(log_std)
-    u = mu + tf.random_normal(tf.shape(mu)) * std
+    u = mu + tf.compat.v1.random.normal(tf.shape(mu)) * std
     pi = tf.tanh(u)
 
     old_mu_ph, old_log_std_ph, u_ph = placeholders(act_dim, act_dim, act_dim)
@@ -169,14 +169,14 @@ def mlp_actor_critic(x, a, hidden_sizes=(64,64), activation=tf.tanh,
     elif policy is None and isinstance(action_space, Discrete):
         policy = mlp_categorical_policy
 
-    with tf.variable_scope('pi'):
+    with tf.compat.v1.variable_scope('pi'):
         policy_outs = policy(x, a, hidden_sizes, activation, output_activation, action_space)
         pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent = policy_outs
 
-    with tf.variable_scope('vf'):
+    with tf.compat.v1.variable_scope('vf'):
         v = tf.squeeze(mlp(x, list(hidden_sizes)+[1], activation, None), axis=1)
 
-    with tf.variable_scope('vc'):
+    with tf.compat.v1.variable_scope('vc'):
         vc = tf.squeeze(mlp(x, list(hidden_sizes)+[1], activation, None), axis=1)
 
     return pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent, v, vc

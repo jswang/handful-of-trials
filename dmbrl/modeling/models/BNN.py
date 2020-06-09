@@ -40,7 +40,7 @@ class BNN:
         self.model_dir = params.get('model_dir', None)
 
         if params.get('sess', None) is None:
-            config = tf.ConfigProto()
+            config = tf.compat.v1.ConfigProto()
             # config.gpu_options.allow_growth = True
             self._sess =  tf.compat.v1.Session(config=config)
         else:
@@ -173,10 +173,10 @@ class BNN:
         # Set up training
         with tf.compat.v1.variable_scope(self.name):
             self.optimizer = optimizer(**optimizer_args)
-            self.sy_train_in = tf.placeholder(dtype=tf.float32,
+            self.sy_train_in = tf.compat.v1.placeholder(dtype=tf.float32,
                                               shape=[self.num_nets, None, self.layers[0].get_input_dim()],
                                               name="training_inputs")
-            self.sy_train_targ = tf.placeholder(dtype=tf.float32,
+            self.sy_train_targ = tf.compat.v1.placeholder(dtype=tf.float32,
                                                 shape=[self.num_nets, None, self.layers[-1].get_output_dim() // 2],
                                                 name="training_targets")
             train_loss = tf.reduce_sum(self._compile_losses(self.sy_train_in, self.sy_train_targ, inc_var_loss=True))
@@ -187,11 +187,11 @@ class BNN:
             self.train_op = self.optimizer.minimize(train_loss, var_list=self.optvars)
 
         # Initialize all variables
-        self.sess.run(tf.variables_initializer(self.optvars + self.nonoptvars + self.optimizer.variables()))
+        self.sess.run(tf.compat.v1.variables_initializer(self.optvars + self.nonoptvars + self.optimizer.variables()))
 
         # Set up prediction
         with tf.compat.v1.variable_scope(self.name):
-            self.sy_pred_in2d = tf.placeholder(dtype=tf.float32,
+            self.sy_pred_in2d = tf.compat.v1.placeholder(dtype=tf.float32,
                                                shape=[None, self.layers[0].get_input_dim()],
                                                name="2D_training_inputs")
             self.sy_pred_mean2d_fac, self.sy_pred_var2d_fac = \
@@ -200,7 +200,7 @@ class BNN:
             self.sy_pred_var2d = tf.reduce_mean(self.sy_pred_var2d_fac, axis=0) + \
                 tf.reduce_mean(tf.square(self.sy_pred_mean2d_fac - self.sy_pred_mean2d), axis=0)
 
-            self.sy_pred_in3d = tf.placeholder(dtype=tf.float32,
+            self.sy_pred_in3d = tf.compat.v1.placeholder(dtype=tf.float32,
                                                shape=[self.num_nets, None, self.layers[0].get_input_dim()],
                                                name="3D_training_inputs")
             self.sy_pred_mean3d_fac, self.sy_pred_var3d_fac = \

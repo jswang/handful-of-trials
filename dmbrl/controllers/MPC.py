@@ -139,10 +139,10 @@ class MPC(Controller):
         # This is where the optimizer function gets hooked up
         if self.model.is_tf_model:
             self.sy_cur_obs = tf.Variable(np.zeros(self.dO), dtype=tf.float32)
-            self.ac_seq = tf.placeholder(shape=[1, self.plan_hor*self.dU], dtype=tf.float32)
+            self.ac_seq = tf.compat.v1.placeholder(shape=[1, self.plan_hor*self.dU], dtype=tf.float32)
             self.pred_cost, self.pred_traj = self._compile_cost(self.ac_seq, get_pred_trajs=True)
             self.optimizer.setup(self._compile_cost, True)
-            self.model.sess.run(tf.variables_initializer([self.sy_cur_obs]))
+            self.model.sess.run(tf.compat.v1.variables_initializer([self.sy_cur_obs]))
         else:
             raise NotImplementedError()
 
@@ -374,14 +374,14 @@ class MPC(Controller):
             inputs = tf.concat([proc_obs, acs], axis=-1)
             mean, var = self.model.create_prediction_tensors(inputs)
             if self.model.is_probabilistic and not self.ign_var:
-                predictions = mean + tf.random_normal(shape=tf.shape(mean), mean=0, stddev=1) * tf.sqrt(var)
+                predictions = mean + tf.compat.v1.random.normal(shape=tf.shape(mean), mean=0, stddev=1) * tf.sqrt(var)
                 if self.prop_mode == "MM":
                     model_out_dim = predictions.get_shape()[-1].value
 
                     predictions = tf.reshape(predictions, [-1, self.npart, model_out_dim])
                     prediction_mean = tf.reduce_mean(predictions, axis=1, keep_dims=True)
                     prediction_var = tf.reduce_mean(tf.square(predictions - prediction_mean), axis=1, keep_dims=True)
-                    z = tf.random_normal(shape=tf.shape(predictions), mean=0, stddev=1)
+                    z = tf.compat.v1.random.normal(shape=tf.shape(predictions), mean=0, stddev=1)
                     samples = prediction_mean + z * tf.sqrt(prediction_var)
                     predictions = tf.reshape(samples, [-1, model_out_dim])
             else:

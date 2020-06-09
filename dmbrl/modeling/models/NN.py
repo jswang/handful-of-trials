@@ -38,7 +38,7 @@ class NN:
         self.model_dir = params.get('model_dir', None)
 
         if params.get('sess', None) is None:
-            config = tf.ConfigProto()
+            config = tf.compat.v1.ConfigProto()
             # config.gpu_options.allow_growth = True
             self._sess =  tf.compat.v1.Session(config=config)
         else:
@@ -144,22 +144,22 @@ class NN:
 
         # Construct all variables.
         with self.sess.as_default():
-            with tf.variable_scope(self.name):
+            with tf.compat.v1.variable_scope(self.name):
                 self.scaler = TensorStandardScaler(self.layers[0].get_input_dim())
                 for i, layer in enumerate(self.layers):
-                    with tf.variable_scope("Layer%i" % i):
+                    with tf.compat.v1.variable_scope("Layer%i" % i):
                         layer.construct_vars()
                         self.decays.extend(layer.get_decays())
                         self.optvars.extend(layer.get_vars())
         self.nonoptvars.extend(self.scaler.get_vars())
 
         # Setup training
-        with tf.variable_scope(self.name):
+        with tf.compat.v1.variable_scope(self.name):
             self.optimizer = optimizer(**optimizer_args)
-            self.sy_train_in = tf.placeholder(dtype=tf.float32,
+            self.sy_train_in = tf.compat.v1.placeholder(dtype=tf.float32,
                                               shape=[self.num_nets, None, self.layers[0].get_input_dim()],
                                               name="training_inputs")
-            self.sy_train_targ = tf.placeholder(dtype=tf.float32,
+            self.sy_train_targ = tf.compat.v1.placeholder(dtype=tf.float32,
                                                 shape=[self.num_nets, None, self.layers[-1].get_output_dim()],
                                                 name="training_targets")
             train_loss = tf.reduce_sum(self._compile_losses(self.sy_train_in, self.sy_train_targ))
@@ -169,18 +169,18 @@ class NN:
             self.train_op = self.optimizer.minimize(train_loss, var_list=self.optvars)
 
         # Initialize all variables
-        self.sess.run(tf.variables_initializer(self.optvars + self.nonoptvars + self.optimizer.variables()))
+        self.sess.run(tf.compat.v1.variables_initializer(self.optvars + self.nonoptvars + self.optimizer.variables()))
 
         # Setup prediction
-        with tf.variable_scope(self.name):
-            self.sy_pred_in2d = tf.placeholder(dtype=tf.float32,
+        with tf.compat.v1.variable_scope(self.name):
+            self.sy_pred_in2d = tf.compat.v1.placeholder(dtype=tf.float32,
                                                shape=[None, self.layers[0].get_input_dim()],
                                                name="2D_training_inputs")
             self.sy_pred_mean2d_fac = self.create_prediction_tensors(self.sy_pred_in2d, factored=True)[0]
             self.sy_pred_mean2d = tf.reduce_mean(self.sy_pred_mean2d_fac, axis=0)
             self.sy_pred_var2d = tf.reduce_mean(tf.square(self.sy_pred_mean2d_fac - self.sy_pred_mean2d), axis=0)
 
-            self.sy_pred_in3d = tf.placeholder(dtype=tf.float32,
+            self.sy_pred_in3d = tf.compat.v1.placeholder(dtype=tf.float32,
                                                shape=[self.num_nets, None, self.layers[0].get_input_dim()],
                                                name="3D_training_inputs")
             self.sy_pred_mean3d_fac = \

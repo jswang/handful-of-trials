@@ -51,7 +51,7 @@ class SafetyPointGoal1ConfigModule:
         self.ENV = Engine(config)
 
         #settings from cartpole
-        cfg = tf.ConfigProto()
+        cfg = tf.compat.v1.ConfigProto()
         cfg.gpu_options.allow_growth = True
         self.SESS = tf.compat.v1.Session(config=cfg)
         self.NN_TRAIN_CFG = {"epochs": 5}

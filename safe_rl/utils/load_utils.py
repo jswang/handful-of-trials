@@ -16,7 +16,7 @@ def load_policy(fpath, itr='last', deterministic=False):
         itr = '%d'%itr
 
     # load the things!
-    sess = tf.Session(graph=tf.Graph())
+    sess = tf.compat.v1.Session(graph=tf.Graph())
     model = restore_tf_graph(sess, osp.join(fpath, 'simple_save'+itr))
 
     # get the correct op for executing actions
