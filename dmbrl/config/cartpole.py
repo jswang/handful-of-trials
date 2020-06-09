@@ -36,6 +36,11 @@ class CartpoleConfigModule:
                 "num_elites": 40,
                 "max_iters": 5,
                 "alpha": 0.1
+            },
+            "SafeOpt":{
+                "swarmsize":30,
+                "max_iters":15,
+                "beta":2
             }
         }
 

@@ -77,7 +77,6 @@ class CEMOptimizer(Optimizer):
 
 
                 def print_cost(t,costs):
-                    print("Entered print_cost")
                     costs=np.array(costs)
                     print("Mean costs:{}".format(np.mean(costs,axis=0)))
 
@@ -86,7 +85,6 @@ class CEMOptimizer(Optimizer):
                 #-------------------------------
                 costs = cost_function(samples)
                 t_shape=t.get_shape()
-                print("Calculated Costs")
                 t=tfe.py_func(func=print_cost,inp=[t,costs],Tout=[t.dtype])
                 t=tf.convert_to_tensor(t)
                 t.set_shape(t_shape)
