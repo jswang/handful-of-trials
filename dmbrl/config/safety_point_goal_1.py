@@ -21,9 +21,12 @@ class SafetyPointGoal1ConfigModule:
     TASK_HORIZON = 200
     # Number of episodes
     NTRAIN_ITERS = 1000
-    NROLLOUTS_PER_ITER = 1
+    # Inital rollouts to train the model with
+    NINIT_ROLLOUTS = 100
     # MPC planning horizon
     PLAN_HOR = 25
+
+    NROLLOUTS_PER_ITER = 1
     GP_NINDUCING_POINTS = 200
     # Input: 33 state + 2 actions, output 33 state
     MODEL_IN, MODEL_OUT = 35, 33
@@ -57,7 +60,7 @@ class SafetyPointGoal1ConfigModule:
         cfg = tf.compat.v1.ConfigProto()
         cfg.gpu_options.allow_growth = True
         self.SESS = tf.compat.v1.Session(config=cfg)
-        self.NN_TRAIN_CFG = {"epochs": 5}
+        self.NN_TRAIN_CFG = {"epochs": 5, "initial_epochs": 35}
         self.OPT_CFG = {
             "Random": {
                 "popsize": 2000
@@ -69,7 +72,7 @@ class SafetyPointGoal1ConfigModule:
                 "alpha": 0.1
             },
             "SafeOpt":{
-                "swarmsize":20,
+                "swarmsize":40,
                 "max_iters":20,
                 "beta":2
             }

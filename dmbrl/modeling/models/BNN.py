@@ -215,28 +215,27 @@ class BNN:
                     var.load(params_dict[str(i)])
         self.finalized = True
 
-    def plot_train_val(self, train, val, batch_size, epochs):
-        epoch, _ = train.shape
+    def plot_train_val(self, logdir):
+        epoch, _ = self.initial_train_losses.shape
         for i in range(self.num_nets):
-            plt.plot(range(epoch), train[:, i], label=f'train_NN{i}')
-            plt.plot(range(epoch), val[:, i], label=f'val_NN{i}')
+            plt.plot(range(epoch), self.initial_train_losses[:, i], label=f'train_NN{i}')
+            if np.any(self.initial_val_losses[:, i] != 0):
+                plt.plot(range(epoch), self.initial_val_losses[:, i], label=f'val_NN{i}')
         plt.legend()
-        plt.title(f"Training and validation curves, batch size {batch_size}, epochs {epochs}")
+        plt.title(f"Training and validation curves, batch size {self.initial_batch_size}, epochs {epoch}")
 
-        Path(self.model_dir).mkdir(parents=True, exist_ok=True)
-        if self.model_dir is not None:
-            plt.savefig(os.path.join(self.model_dir, "train_vs_val.png"))
-            np.save(os.path.join(self.model_dir, "train.npy"), train)
-            np.save(os.path.join(self.model_dir, "val.npy"), val)
-        plt.show()
+        Path(logdir).mkdir(parents=True, exist_ok=True)
+        plt.savefig(os.path.join(logdir, "train_vs_val.png"))
+        np.save(os.path.join(logdir, "train.npy"), self.initial_train_losses)
+        np.save(os.path.join(logdir, "val.npy"), self.initial_val_losses)
         plt.close()
 
     #################
     # Model Methods #
     #################
 
-    def train(self, inputs, targets,
-              batch_size=32, epochs=100,
+    def train(self, inputs, targets, has_been_trained,
+              batch_size=32, epochs=100, initial_epochs=None,
               hide_progress=False, holdout_ratio=0.0, max_logging=5000):
         """Trains/Continues network training
 
@@ -250,6 +249,10 @@ class BNN:
 
         Returns: None
         """
+        # Use initial epochs if defined and this is the first time
+        if not has_been_trained and initial_epochs is not None:
+            epochs = initial_epochs
+
         def shuffle_rows(arr):
             idxs = np.argsort(np.random.uniform(size=arr.shape), axis=-1)
             return arr[np.arange(arr.shape[0])[:, None], idxs]
@@ -314,8 +317,10 @@ class BNN:
                         "Training loss(es)": t_losses,
                         "Holdout loss(es)": v_losses
                     })
-        if holdout_ratio > 0:
-            self.plot_train_val(train_losses, val_losses, batch_size, epochs)
+        if not has_been_trained:
+            self.initial_train_losses = train_losses
+            self.initial_val_losses = val_losses
+            self.initial_batch_size = batch_size
 
     def predict(self, inputs, factored=False, *args, **kwargs):
         """Returns the distribution predicted by the model for each input vector in inputs.

@@ -200,8 +200,8 @@ class NN:
     # Model Methods #
     #################
 
-    def train(self, inputs, targets,
-              batch_size=32, epochs=100,
+    def train(self, inputs, targets, has_been_trained,
+              batch_size=32, epochs=100, initial_epochs=None,
               hide_progress=False, holdout_ratio=0.0, max_logging=5000):
         def shuffle_rows(arr):
             idxs = np.argsort(np.random.uniform(size=arr.shape), axis=-1)

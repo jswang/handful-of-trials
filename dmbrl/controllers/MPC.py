@@ -184,8 +184,8 @@ class MPC(Controller):
         self.train_in = np.concatenate([self.train_in] + new_train_in, axis=0)
         self.train_targs = np.concatenate([self.train_targs] + new_train_targs, axis=0)
 
-        # Train the model (jsw: training neural network models)
-        self.model.train(self.train_in, self.train_targs, **self.model_train_cfg)
+        # Train the model
+        self.model.train(self.train_in, self.train_targs, self.has_been_trained, **self.model_train_cfg)
         self.has_been_trained = True
 
     def reset(self):

@@ -103,6 +103,8 @@ class MBExperiment:
                 [sample["ac"] for sample in samples],
                 [sample["rewards"] for sample in samples]
             )
+        # Plot the train/validation curves
+        self.policy.model.plot_train_val(self.logdir)
 
         # Training loop:
         # jsw: "for Trial k = 1 to K do:"
@@ -163,6 +165,7 @@ class MBExperiment:
                     "cost": traj_cost,
                 }
             )
+
             # Delete iteration directory if not used
             if len(os.listdir(iter_dir)) == 0:
                 os.rmdir(iter_dir)

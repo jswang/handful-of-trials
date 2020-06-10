@@ -48,6 +48,7 @@ if __name__ == "__main__":
     # print(args.logdir)
 
 # jsw: Manual runs
+# print("WARNING WARNING UNCOMMENT MBEXP.PY")
 # main('safety_point_goal_1', "MPC", [], [],  './data/tmp')
 # main('cartpole', "MPC", [], [], './data/tmp')
 # main('safety_point_goal_1', "MPC",[['model-type', 'P'], ['prop-type', 'DS']] , [['exp_cfg.exp_cfg.ntrain_iters', '2'], ['exp_cfg.sim_cfg.task_hor', '5'], ['ctrl_cfg.opt_cfg.plan_hor', '5']]
