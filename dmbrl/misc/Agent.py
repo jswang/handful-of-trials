@@ -62,9 +62,10 @@ class Agent:
             start = time.time()
             # .act() is MPC actually solving limited time optimal control problem
             # for best action given past info and it's planning horizon (plan_hor)
-            a, c = policy.act(O[t], t, get_pred_cost=True) #O[t] is current state
+            # pred_next_state is num_particles x observation space
+            a, c, pred_trajs = policy.act(O[t], t, get_pred_cost=True) #O[t] is current state
+
             A.append(a)
-            # A.append(policy.act(O[t], t))
             times.append(time.time() - start)
             if self.noise_stddev is None:
                 # jsw Using environment to actually step the obs, reward, and info
@@ -75,6 +76,12 @@ class Agent:
                 action = np.minimum(np.maximum(action, self.env.action_space.low), self.env.action_space.high)
                 obs, reward, done, info = self.env.step(action)
             O.append(obs)
+
+
+            #Print the observed vs. predicted next state. time=0 is last true obs state in MPC
+            if pred_trajs is not None:
+                pred_next_state = pred_trajs[1, :, :, :].squeeze()
+                print(f"Predicted next_goal_dist: {pred_next_state[:, 0]}, actual: {obs[0]}")
             reward_sum += reward
             rewards.append(reward)
             if 'cost' in info:

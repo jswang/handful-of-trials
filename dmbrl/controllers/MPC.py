@@ -213,12 +213,12 @@ class MPC(Controller):
         if not self.has_been_trained:
             action = np.random.uniform(self.ac_lb, self.ac_ub, self.ac_lb.shape)
             if get_pred_cost:
-                return action, 0
+                return action, 0, None
             return action
         if self.ac_buf.shape[0] > 0:
             action, self.ac_buf = self.ac_buf[0], self.ac_buf[1:]
             if get_pred_cost:
-                return action, 0 #jsw: not sure, but seems necessary
+                return action, 0, None
             return action
 
         if self.model.is_tf_model:
@@ -237,14 +237,15 @@ class MPC(Controller):
         # returned by the optimizer. Calls _compile_cost, a tensorflow function
         if get_pred_cost and not (self.log_traj_preds or self.log_particles):
             if self.model.is_tf_model:
-                pred_cost = self.model.sess.run(
-                    self.pred_cost,
-                    feed_dict={self.ac_seq: soln[None]}
-                )[0]
+                pred_cost, pred_traj = self.model.sess.run(
+                    [self.pred_cost, self.pred_traj], # output
+                    feed_dict={self.ac_seq: soln[None]} #input
+                )
             else:
                 raise NotImplementedError()
-            return self.act(obs, t), pred_cost
+            return self.act(obs, t), pred_cost, pred_traj
         elif self.log_traj_preds or self.log_particles:
+
             pred_cost, pred_traj = self.model.sess.run(
                 [self.pred_cost, self.pred_traj],
                 feed_dict={self.ac_seq: soln[None]}
@@ -257,6 +258,7 @@ class MPC(Controller):
                 self.pred_vars.append(np.mean(np.square(pred_traj - self.pred_means[-1]), axis=1))
             if get_pred_cost:
                 return self.act(obs, t), pred_cost
+        #Also return the predicted next state
         return self.act(obs, t)
 
     def dump_logs(self, primary_logdir, iter_logdir):
@@ -284,6 +286,11 @@ class MPC(Controller):
 
     # The cost function passed to the optimizer
     def _compile_cost(self, ac_seqs, get_pred_trajs=False):
+        """
+        Using num_particles, propagates each particle forward for MPC time horizon timesteps using ac_seqs.
+        Calculates the average cost of the entire trajectory across all particles.
+
+        """
         t, nopt = tf.constant(0), tf.shape(ac_seqs)[0]
         init_costs = tf.zeros([nopt, self.npart])
         ac_seqs = tf.reshape(ac_seqs, [-1, self.plan_hor, self.dU])
@@ -300,24 +307,26 @@ class MPC(Controller):
             pred_trajs = init_obs[None]
 
             def iteration(t, total_cost, cur_obs, pred_trajs):
-                cur_acs = ac_seqs[t]
-                # 20 partices x MODEL_OUT are the dimensions
-                # _predict_next_obs uses learned mean and var to generate a bunch of predictions
-                next_obs = self._predict_next_obs(cur_obs, cur_acs)
+                # ac_seq is mpc_horizon x num_particles x action_space
+                cur_acs = ac_seqs[t] # cur_acs is num_particles x action_space
 
-                delta_cost = tf.reshape(
+                # _predict_next_obs uses learned mean and var to predict next state for each particle
+                next_obs = self._predict_next_obs(cur_obs, cur_acs) # next_obs is num_particles x state_space
+
+                delta_cost = tf.reshape( #delta_cost is 1 x num_particles, indicates predicted cost for this timestep of MPC horizon
                     self.obs_cost_fn(next_obs, cur_obs) + self.ac_cost_fn(cur_acs), [-1, self.npart]
                 )
 
                 #note, must have input and output that are part of tensorflow graph
                 # def print_cost(t, delta_cost, next_obs, cur_obs):
                 #     delta_cost = np.array(tf.identity(delta_cost))
-                #     print(f"Predicted cost next action: {delta_cost[0]}")
+                #     if t == 0:
+                #         print(f"curr state {cur_obs}, NN predicted next state {next_obs}")
                 #     # print(f"cur obs: {cur_obs}")
                 #     # print(f"next obs: {next_obs}")
                 #     return t
 
-                # # preserve shapes before call, restore after call
+                # preserve shapes before call, restore after call
                 # t_shape = t.get_shape()
                 # t = tfe.py_func(func=print_cost, inp=[t, delta_cost, next_obs, cur_obs], Tout=t.dtype)
                 # t = tf.convert_to_tensor(t)
@@ -326,9 +335,9 @@ class MPC(Controller):
 
                 next_obs = self.obs_postproc2(next_obs)
                 pred_trajs = tf.concat([pred_trajs, next_obs[None]], axis=0)
-                return t + 1, total_cost + delta_cost, next_obs, pred_trajs
+                return t + 1, total_cost + delta_cost, next_obs, pred_trajs #this timestep's cost isn't preserved: it's added to the total trajectory cost
 
-            _, costs, _, pred_trajs = tf.while_loop(
+            _, costs, next_obs, pred_trajs = tf.while_loop(
                 cond=continue_prediction, body=iteration, loop_vars=[t, init_costs, init_obs, pred_trajs],
                 shape_invariants=[
                     t.get_shape(), init_costs.get_shape(), init_obs.get_shape(), tf.TensorShape([None, None, self.dO])
@@ -336,9 +345,11 @@ class MPC(Controller):
             )
 
             # Replace nan costs with very high cost
+            #costs is average total cost of all 20 particles for their trajectory
             costs = tf.reduce_mean(tf.where(tf.is_nan(costs), 1e6 * tf.ones_like(costs), costs), axis=1)
+            # pred_trajs is mpc_horizon+1 x none x num_particles x state_space, and represents each particles predicted trajectory over MPC horizon
             pred_trajs = tf.reshape(pred_trajs, [self.plan_hor + 1, -1, self.npart, self.dO])
-            # print(f"pred_trajs.shape: {pred_trajs.shape}")
+
             return costs, pred_trajs
         else:
             def iteration(t, total_cost, cur_obs):
@@ -349,7 +360,7 @@ class MPC(Controller):
                 )
                 return t + 1, total_cost + delta_cost, self.obs_postproc2(next_obs)
 
-            _, costs, _ = tf.while_loop(
+            _, costs, next_obs = tf.while_loop(
                 cond=continue_prediction, body=iteration, loop_vars=[t, init_costs, init_obs]
             )
 
@@ -357,6 +368,10 @@ class MPC(Controller):
             return tf.reduce_mean(tf.where(tf.is_nan(costs), 1e6 * tf.ones_like(costs), costs), axis=1)
 
     def _predict_next_obs(self, obs, acs):
+        """
+        Use learned mean and var to predict next state for each particle given a current state and action.
+        Performs trajectory sampling or moment matching of potential action sequences
+        """
         proc_obs = self.obs_preproc(obs)
 
         if self.model.is_tf_model:
@@ -377,6 +392,23 @@ class MPC(Controller):
             # Obtain model predictions
             inputs = tf.concat([proc_obs, acs], axis=-1)
             mean, var = self.model.create_prediction_tensors(inputs)
+
+            #############################################
+            # # Print the models mean and variance of prediction
+            # def print_meanvar(obs, mean, var):
+            #     mean = np.array(tf.identity(mean))
+            #     var = np.array(tf.identity(var))
+            #     print(f"Max var {np.max(var)}, Min var: {np.min(var)}")
+            #     return obs
+
+            # # preserve shapes before call, restore after call
+            # shape = obs.get_shape()
+            # obs = tfe.py_func(func=print_meanvar, inp=[obs, mean, var], Tout=obs.dtype)
+            # obs = tf.convert_to_tensor(obs)
+            # obs.set_shape(shape)
+            # obs=tf.squeeze(obs)
+            #############################################
+
             if self.model.is_probabilistic and not self.ign_var:
                 predictions = mean + tf.compat.v1.random.normal(shape=tf.shape(mean), mean=0, stddev=1) * tf.sqrt(var)
                 if self.prop_mode == "MM":

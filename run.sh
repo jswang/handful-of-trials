@@ -11,7 +11,7 @@ elif [ "$1" = "safety_point_goal_1" ]; then
     python scripts/mbexp.py -env safety_point_goal_1
 # PE-TS with more pretraining for any network
 elif [ "$1" = "pretrain" ]; then
-    python scripts/mbexp.py -env "$2" -o exp_cfg.exp_cfg.ninit_rollouts 10 -o exp_cfg.exp_cfg.ntrain_iters 1 -o ctrl_cfg.prop_cfg.model_init_cfg.model_dir "data/train_val/$2" -o ctrl_cfg.prop_cfg.model_train_cfg.epochs 10 -o ctrl_cfg.prop_cfg.model_train_cfg.holdout_ratio .2
+    python scripts/mbexp.py -env "$2" -o exp_cfg.exp_cfg.ninit_rollouts 100 -o exp_cfg.exp_cfg.ntrain_iters 1 -o ctrl_cfg.prop_cfg.model_init_cfg.model_dir "data/train_val/$2" -o ctrl_cfg.prop_cfg.model_train_cfg.epochs 500 -o ctrl_cfg.prop_cfg.model_train_cfg.holdout_ratio .2
 # Fast run Cartpole task horizon=5 (i/o 200), MPC planning horizon=5 (i/o 25)
 elif [ "$1" = "fast" ]; then
     python scripts/mbexp.py -env "$2" -o exp_cfg.exp_cfg.ntrain_iters 1 -o exp_cfg.sim_cfg.task_hor 1 -o ctrl_cfg.opt_cfg.plan_hor 1 -logdir "data/tmp"

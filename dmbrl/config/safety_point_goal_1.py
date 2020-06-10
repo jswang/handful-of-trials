@@ -17,9 +17,12 @@ import dmbrl.env
 # modified version of Safexp-PointGoal1-v0, the agent gets exact
 # knowledge of distance to goal, no knowledge of hazards
 class SafetyPointGoal1ConfigModule:
+    # Number timesteps per episode
     TASK_HORIZON = 200
+    # Number of episodes
     NTRAIN_ITERS = 1000
     NROLLOUTS_PER_ITER = 1
+    # MPC planning horizon
     PLAN_HOR = 25
     GP_NINDUCING_POINTS = 200
     # Input: 33 state + 2 actions, output 33 state

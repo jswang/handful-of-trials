@@ -76,19 +76,19 @@ class CEMOptimizer(Optimizer):
                 samples = tf.random.truncated_normal([self.popsize, self.sol_dim], mean, tf.sqrt(constrained_var))
 
 
-                def print_cost(t,costs):
-                    costs=np.array(costs)
-                    print("Mean costs:{}".format(np.mean(costs,axis=0)))
+                # def print_cost(t,costs):
+                #     costs=np.array(costs)
+                #     print("Mean costs:{}".format(np.mean(costs,axis=0)))
 
-                    return t
-                #comment out to not get action cost values during optimization
-                #-------------------------------
+                #     return t
+                # #comment out to not get action cost values during optimization
+                # #-------------------------------
                 costs = cost_function(samples)
-                t_shape=t.get_shape()
-                t=tfe.py_func(func=print_cost,inp=[t,costs],Tout=[t.dtype])
-                t=tf.convert_to_tensor(t)
-                t.set_shape(t_shape)
-                t=tf.squeeze(t)
+                # t_shape=t.get_shape()
+                # t=tfe.py_func(func=print_cost,inp=[t,costs],Tout=[t.dtype])
+                # t=tf.convert_to_tensor(t)
+                # t.set_shape(t_shape)
+                # t=tf.squeeze(t)
                 #------------------------------
                 values, indices = tf.nn.top_k(-costs, k=self.num_elites, sorted=True)
 
