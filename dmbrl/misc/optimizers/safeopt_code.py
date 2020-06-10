@@ -93,13 +93,11 @@ class SafeOptimizer(Optimizer):
                         best_val=maxi_val_np
                         best_sol=maxi_sol_np
                         # print("Update to best occured")
-                        print("Best Cost: {}".format(best_val))
+                        # print("Best Cost: {}".format(best_val))
                     # print("Cost:{}".format(cost_np))
                     # print("Best Cost: {}".format(best_val))
 
-
                     self.opt.add_new_data_point(pt_np,-cost_np)
-
                     new_pt,stddev=self.opt.get_new_query_point("expanders") # Returns point most likely to expand safe set
                     #new_pt=self.opt.optimize()
                     maxi_sol2,stddev2=self.opt.get_new_query_point("maximizers") # returns best parameters from current known points
@@ -119,8 +117,6 @@ class SafeOptimizer(Optimizer):
                             if not name.startswith('_'):
                                 del locals()[name]
 
-                    # print("New Expander Point Found: {}".format(new_pt))
-                    # print("New Maximizer point found:",maxi_sol2)
                     # print("-----------Step Ended------------------")
                     return new_pt,maxi_sol2,best_sol,best_val
                 pt=tf.expand_dims(pt,axis=0)
@@ -151,7 +147,7 @@ class SafeOptimizer(Optimizer):
             with self.tf_sess.graph.as_default():
                 '''
                 def wrapper_func(self):
-                    
+
                     def initialize_gp_local(init_pt,sample):
                         print("Entered initialize GP Local----------------")
                         init_pt=np.array(init_pt)
@@ -168,17 +164,17 @@ class SafeOptimizer(Optimizer):
                     #return initialize_gp_local(self.init_pt,sample)
                 '''
                 def initialize_gp_local(init_pt,sample):
-                    print("Entered initialize GP Local----------------")
+                    # print("Entered initialize GP Local----------------")
                     init_pt=np.array(init_pt)
                     sample=np.array(sample)
-                    print("Sample cost is -------------------------")
-                    print(sample)
+                    # print("Sample cost is -------------------------")
+                    # print(sample)
                     init_pt=np.expand_dims(init_pt,axis=0)
                     self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0.001)
                     self.opt=SafeOptSwarm(self.gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
-                    print("Succesfully initialized GP for Safeopt-----------------------------------")
+                    # print("Succesfully initialized GP for Safeopt-----------------------------------")
                     return init_pt
-                print("Entered Session----------------------------")
+                # print("Entered Session----------------------------")
                 init_pt=tf.expand_dims(self.init_pt,axis=0) # Necessary to maintain dimensionality
                 #init_pt2=tf.py_function(wrapper_func(self),[init_pt,sample],init_pt.dtype)
                 #init_pt2=tf.convert_to_tensor(init_pt2)
@@ -189,7 +185,7 @@ class SafeOptimizer(Optimizer):
                 #self.init_pt2=tf.py_function(wrapper_func(self),[self.init_pt,sample],self.init_pt.dtype)
                 self.init_pt2=tf.convert_to_tensor(self.init_pt2)
                 self.init_pt2.set_shape(self.init_pt.get_shape())
-                #t=tf.py_function(wrapper_func(self),[t,init_pt,sample],t.dtype)    
+                #t=tf.py_function(wrapper_func(self),[t,init_pt,sample],t.dtype)
                 self.init_pt2=tf.squeeze(self.init_pt2)
                 self.num_opt_iters, self.pt, self.var,self.maxi_sol, self.best_val, self.best_sol = tf.while_loop(
                     cond=continue_optimization, body=iteration,

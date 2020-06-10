@@ -70,7 +70,7 @@ class SafetyPointGoal1ConfigModule:
             },
             "SafeOpt":{
                 "swarmsize":20,
-                "max_iters":10,
+                "max_iters":20,
                 "beta":2
             }
         }
