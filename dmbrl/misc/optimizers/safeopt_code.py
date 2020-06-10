@@ -46,12 +46,12 @@ class SafeOptimizer(Optimizer):
         self.num_opt_iters, self.pt, self.var = None, None, None
         self.tf_compatible, self.cost_function = None, None
         #Initialization of Points- Custom
-        init_pt=np.zeros((sol_dim,1)).T
+        #init_pt=np.zeros((sol_dim,1)).T
 
-        sample=np.array([[0]])
+        #sample=np.array([[0]])
         #--------------------------
-        self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0)
-        self.opt=SafeOptSwarm(self.gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
+        #self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0)
+        #self.opt=SafeOptSwarm(self.gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
         #self.opt=SafeOpt(self.gpmodel,self.fmin,self.bounds)
     def setup(self, cost_function, tf_compatible):
         """Sets up this optimizer using a given cost function.
@@ -150,32 +150,50 @@ class SafeOptimizer(Optimizer):
 
             with self.tf_sess.graph.as_default():
                 '''
-                @tf.function
                 def wrapper_func(self):
-                    @tf.function
+                    
                     def initialize_gp_local(init_pt,sample):
                         print("Entered initialize GP Local----------------")
-                        init_pt=init_pt.eval()
-                        sample=sample.eval()
+                        init_pt=np.array(init_pt)
+                        sample=np.array(sample)
                         print("Sample cost is -------------------------")
                         print(sample)
                         self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0.001)
-                        self.opt=SafeOptSwarm(gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
+                        self.opt=SafeOptSwarm(self.gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
                         print("Succesfully initialized GP for Safeopt-----------------------------------")
-                        return tf.float32(0)
+                        return init_pt
                     print("Wrapper called")
 
-                    return tf.py_function(initialize_gp_local,[init_pt,sample],tf.float32)
-                    #return initialize_gp_local(init_pt,sample)
+                    return tf.py_function(initialize_gp_local,[self.init_pt,sample],self.init_pt.dtype)
+                    #return initialize_gp_local(self.init_pt,sample)
+                '''
+                def initialize_gp_local(init_pt,sample):
+                    print("Entered initialize GP Local----------------")
+                    init_pt=np.array(init_pt)
+                    sample=np.array(sample)
+                    print("Sample cost is -------------------------")
+                    print(sample)
+                    init_pt=np.expand_dims(init_pt,axis=0)
+                    self.gpmodel=GPy.models.GPRegression(init_pt,sample,noise_var=0.001)
+                    self.opt=SafeOptSwarm(self.gpmodel,self.fmin,self.bounds,swarm_size=self.swarm_size)
+                    print("Succesfully initialized GP for Safeopt-----------------------------------")
+                    return init_pt
                 print("Entered Session----------------------------")
                 init_pt=tf.expand_dims(self.init_pt,axis=0) # Necessary to maintain dimensionality
+                #init_pt2=tf.py_function(wrapper_func(self),[init_pt,sample],init_pt.dtype)
+                #init_pt2=tf.convert_to_tensor(init_pt2)
+                #init_pt2.set_shape(init_pt.get_shape())
                 sample=-cost_function(init_pt) # cost for init_pt
                 sample=tf.expand_dims(sample,axis=1)
-                '''
-
+                self.init_pt2=tf.py_function(initialize_gp_local,[self.init_pt,sample],self.init_pt.dtype)
+                #self.init_pt2=tf.py_function(wrapper_func(self),[self.init_pt,sample],self.init_pt.dtype)
+                self.init_pt2=tf.convert_to_tensor(self.init_pt2)
+                self.init_pt2.set_shape(self.init_pt.get_shape())
+                #t=tf.py_function(wrapper_func(self),[t,init_pt,sample],t.dtype)    
+                self.init_pt2=tf.squeeze(self.init_pt2)
                 self.num_opt_iters, self.pt, self.var,self.maxi_sol, self.best_val, self.best_sol = tf.while_loop(
                     cond=continue_optimization, body=iteration,
-                    loop_vars=[0, self.init_pt, self.init_var,self.init_pt, float("inf"), self.init_pt]
+                    loop_vars=[0, self.init_pt2, self.init_var,self.init_pt2, float("inf"), self.init_pt2]
                 )
 
     def reset(self):
@@ -186,7 +204,6 @@ class SafeOptimizer(Optimizer):
 
 
         if self.tf_compatible:
-            #print(init_pt.get_shape())
             #print(init_var.get_shape())
             sol, solvar = self.tf_sess.run(
                 [self.best_sol, self.var],
