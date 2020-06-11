@@ -14,7 +14,7 @@ class SafeOptimizer(Optimizer):
     """A Tensorflow-compatible GP based safe optimizer.
     """
     def __init__(self, sol_dim, max_iters, swarmsize=30, tf_session=None,
-                 upper_bound=None,lower_bound=None, epsilon=0.001, beta=2):
+                 upper_bound=None,lower_bound=None, epsilon=0.001, beta=2, fmin=0):
         """Creates an instance of this class.
 
         Arguments:
@@ -36,7 +36,8 @@ class SafeOptimizer(Optimizer):
         self.bounds = bounds
         self.epsilon, self.beta = epsilon, beta
         self.tf_sess = tf_session
-        self.fmin=-20 # Lowest reward allowable
+        self.fmin=fmin # Lowest reward allowable
+
         if self.tf_sess is not None:
             with self.tf_sess.graph.as_default():
                 with tf.variable_scope("SafeOptSolver") as scope:

@@ -173,7 +173,8 @@ def _create_ctrl_config(ctrl_cfg, cfg_module, ctrl_type, ctrl_args, type_map):
             type_map.ctrl_cfg.opt_cfg.cfg=DotMap(
                 max_iters=int,
                 swarmsize=int,
-                beta=float
+                beta=float,
+                fmin=float
             )
 
         else:
