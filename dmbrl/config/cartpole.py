@@ -42,7 +42,7 @@ class CartpoleConfigModule:
                 "swarmsize":30,
                 "max_iters":15,
                 "beta":2,
-                "fmin":0
+                "fmin":-100
             }
         }
 

@@ -105,8 +105,8 @@ class MPC(Controller):
         self.ac_cost_fn = get_required_argument(params.opt_cfg, "ac_cost_fn", "Must provide cost on actions.")
 
         self.save_all_models = params.log_cfg.get("save_all_models", False)
-        self.log_traj_preds = params.log_cfg.get("log_traj_preds", False)
-        self.log_particles = params.log_cfg.get("log_particles", False)
+        self.log_traj_preds = params.log_cfg.get("log_traj_preds", True)
+        self.log_particles = params.log_cfg.get("log_particles", True)
 
         # Perform argument checks
         if self.prop_mode not in ["E", "DS", "MM", "TS1", "TSinf"]:
@@ -257,7 +257,7 @@ class MPC(Controller):
                 self.pred_means.append(np.mean(pred_traj, axis=1))
                 self.pred_vars.append(np.mean(np.square(pred_traj - self.pred_means[-1]), axis=1))
             if get_pred_cost:
-                return self.act(obs, t), pred_cost
+                return self.act(obs, t), pred_cost, pred_traj
         #Also return the predicted next state
         return self.act(obs, t)
 

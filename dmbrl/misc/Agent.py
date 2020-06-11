@@ -80,6 +80,7 @@ class Agent:
             #Print the observed vs. predicted next state. time=0 is last true obs state in MPC
             # if pred_trajs is not None:
             #     pred_next_state = pred_trajs[1, :, :, :].squeeze()
+            #     # has 20 particles, 33 observations. Take the mean
             #     print(f"Predicted next_goal_dist: {pred_next_state[:, 0]}, actual: {obs[0]}")
 
             reward_sum += reward
