@@ -20,6 +20,7 @@ class PusherConfigModule:
     PLAN_HOR = 25
     MODEL_IN, MODEL_OUT = 27, 20
     GP_NINDUCING_POINTS = 200
+    NINIT_ROLLOUTS = 1
 
     def __init__(self):
         self.ENV = gym.make(self.ENV_NAME)

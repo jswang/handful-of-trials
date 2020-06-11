@@ -50,7 +50,7 @@ class Agent:
         video_record = record_fname is not None
         recorder = None if not video_record else VideoRecorder(self.env, record_fname)
 
-        times, rewards, cost = [], [], []
+        rewards, cost = [], []
         O, A, reward_sum, done = [self.env.reset()], [], 0, False
 
         policy.reset()
@@ -59,14 +59,13 @@ class Agent:
         for t in range(horizon):
             if video_record:
                 recorder.capture_frame()
-            start = time.time()
             # .act() is MPC actually solving limited time optimal control problem
             # for best action given past info and it's planning horizon (plan_hor)
             # pred_next_state is num_particles x observation space
             a, c, pred_trajs = policy.act(O[t], t, get_pred_cost=True) #O[t] is current state
 
             A.append(a)
-            times.append(time.time() - start)
+
             if self.noise_stddev is None:
                 # jsw Using environment to actually step the obs, reward, and info
                 obs, reward, done, info = self.env.step(A[t])
@@ -79,14 +78,17 @@ class Agent:
 
 
             #Print the observed vs. predicted next state. time=0 is last true obs state in MPC
-            if pred_trajs is not None:
-                pred_next_state = pred_trajs[1, :, :, :].squeeze()
-                print(f"Predicted next_goal_dist: {pred_next_state[:, 0]}, actual: {obs[0]}")
+            # if pred_trajs is not None:
+            #     pred_next_state = pred_trajs[1, :, :, :].squeeze()
+            #     print(f"Predicted next_goal_dist: {pred_next_state[:, 0]}, actual: {obs[0]}")
+
             reward_sum += reward
             rewards.append(reward)
             if 'cost' in info:
                 cost.append(info['cost'])
             if done:
+                if t < 999:
+                    print(f"finished early at t{t}")
                 break
 
         if video_record:

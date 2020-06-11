@@ -20,6 +20,7 @@ class ReacherConfigModule:
     PLAN_HOR = 25
     MODEL_IN, MODEL_OUT = 24, 17
     GP_NINDUCING_POINTS = 200
+    NINIT_ROLLOUTS = 1
 
     def __init__(self):
         self.ENV = gym.make(self.ENV_NAME)

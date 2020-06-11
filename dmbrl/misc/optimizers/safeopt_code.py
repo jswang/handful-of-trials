@@ -36,7 +36,7 @@ class SafeOptimizer(Optimizer):
         self.bounds = bounds
         self.epsilon, self.beta = epsilon, beta
         self.tf_sess = tf_session
-        self.fmin=0 # Lowest reward allowable
+        self.fmin=-20 # Lowest reward allowable
         if self.tf_sess is not None:
             with self.tf_sess.graph.as_default():
                 with tf.variable_scope("SafeOptSolver") as scope:
@@ -93,7 +93,7 @@ class SafeOptimizer(Optimizer):
                         best_val=maxi_val_np
                         best_sol=maxi_sol_np
                         # print("Update to best occured")
-                        # print("Best Cost: {}".format(best_val))
+                        print("Best Cost: {}".format(best_val))
                     # print("Cost:{}".format(cost_np))
                     # print("Best Cost: {}".format(best_val))
 

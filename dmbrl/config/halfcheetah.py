@@ -19,6 +19,7 @@ class HalfCheetahConfigModule:
     NTRAIN_ITERS = 300
     NROLLOUTS_PER_ITER = 1
     PLAN_HOR = 30
+    NINIT_ROLLOUTS = 1
     # jsw Input seems to be action_space + observation space + 1
     # jsw Output seems to be just observation space + 1
     MODEL_IN, MODEL_OUT = 24, 18

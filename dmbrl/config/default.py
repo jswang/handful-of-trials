@@ -71,7 +71,7 @@ def _create_exp_config(exp_cfg, cfg_module, logdir, type_map):
 
     exp_cfg.exp_cfg.ntrain_iters = cfg_module.NTRAIN_ITERS
     exp_cfg.exp_cfg.nrollouts_per_iter = cfg_module.NROLLOUTS_PER_ITER
-
+    exp_cfg.exp_cfg.ninit_rollouts = cfg_module.NINIT_ROLLOUTS
     exp_cfg.log_cfg.logdir = logdir
 
 

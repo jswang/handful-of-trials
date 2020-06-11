@@ -348,6 +348,7 @@ def run_polopt_agent(env_fn,
         if agent.use_penalty:
             cur_penalty = sess.run(penalty)
 
+        # will gather 30,000 state, action, next state
         for t in range(local_steps_per_epoch):
 
             # Possibly render
@@ -386,7 +387,14 @@ def run_polopt_agent(env_fn,
             ep_cost += c
             ep_len += 1
 
-            terminal = d or (ep_len == max_ep_len)
+    """
+    t=0                                                        t = 30,000
+    |              30,000 local_steps_per_epoch                |
+    | ep |  ep    |     ep   |      ep    |    ep    |    ep   |
+                                max 1000
+    """
+            # reach the goal or hit max env timesteps (1000)
+            terminal = (d or (ep_len == max_ep_len))
             if terminal or (t==local_steps_per_epoch-1):
 
                 # If trajectory didn't reach terminal state, bootstrap value target(s)

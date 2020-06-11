@@ -18,11 +18,11 @@ import dmbrl.env
 # knowledge of distance to goal, no knowledge of hazards
 class SafetyPointGoal1ConfigModule:
     # Number timesteps per episode
-    TASK_HORIZON = 200
+    TASK_HORIZON = 1000
     # Number of episodes
     NTRAIN_ITERS = 1000
     # Inital rollouts to train the model with
-    NINIT_ROLLOUTS = 100
+    NINIT_ROLLOUTS = 20
     # MPC planning horizon
     PLAN_HOR = 25
 
@@ -72,8 +72,8 @@ class SafetyPointGoal1ConfigModule:
                 "alpha": 0.1
             },
             "SafeOpt":{
-                "swarmsize":40,
-                "max_iters":20,
+                "swarmsize":20,
+                "max_iters":10,
                 "beta":2
             }
         }

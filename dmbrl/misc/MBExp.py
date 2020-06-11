@@ -80,7 +80,7 @@ class MBExperiment:
         # Perform initial rollouts
         # uses policy.act() to come up with action, should be uniform random
         samples = []
-        print("Acting randomly")
+        print(f"Acting randomly for {self.ninit_rollouts} rollouts")
         for i in range(self.ninit_rollouts):
 
             samples.append(
@@ -92,6 +92,7 @@ class MBExperiment:
             traj_acs.append(samples[-1]["ac"])
             traj_rews.append(samples[-1]["rewards"])
             traj_cost.append(samples[-1]["cost"])
+        print(f"{len(traj_rews)} Number of initial samples")
 
         # jsw: "Initialize data D with a random controller for one trial"
         if self.ninit_rollouts > 0:
