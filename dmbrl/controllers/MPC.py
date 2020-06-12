@@ -105,8 +105,8 @@ class MPC(Controller):
         self.ac_cost_fn = get_required_argument(params.opt_cfg, "ac_cost_fn", "Must provide cost on actions.")
 
         self.save_all_models = params.log_cfg.get("save_all_models", False)
-        self.log_traj_preds = params.log_cfg.get("log_traj_preds", True)
-        self.log_particles = params.log_cfg.get("log_particles", True)
+        self.log_traj_preds = params.log_cfg.get("log_traj_preds", False)
+        self.log_particles = params.log_cfg.get("log_particles", False)
 
         # Perform argument checks
         if self.prop_mode not in ["E", "DS", "MM", "TS1", "TSinf"]:

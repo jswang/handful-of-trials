@@ -22,9 +22,9 @@ class SafetyPointGoal1ConfigModule:
     # Number of episodes
     NTRAIN_ITERS = 1000
     # Inital rollouts to train the model with
-    NINIT_ROLLOUTS = 20
+    NINIT_ROLLOUTS = 1
     # MPC planning horizon
-    PLAN_HOR = 25
+    PLAN_HOR = 100 #TODO put back to 25?
 
     NROLLOUTS_PER_ITER = 1
     GP_NINDUCING_POINTS = 200
@@ -47,12 +47,12 @@ class SafetyPointGoal1ConfigModule:
             'lidar_num_bins': 16,
             'lidar_max_dist': 3,
             'goal_keepout': 0.305,
-            'sensors_obs': [], #['accelerometer', 'velocimeter', 'gyro', 'magnetometer'],
+            'sensors_obs': [],
             'constrain_hazards': True,
             'hazards_num': 8,
             'hazards_keepout': 0.18,
             'hazards_size': 0.2,
-            '_seed': 0 # TODO: consider taking out
+            '_seed': 0
         }
         self.ENV = Engine(config)
 
@@ -60,7 +60,7 @@ class SafetyPointGoal1ConfigModule:
         cfg = tf.compat.v1.ConfigProto()
         cfg.gpu_options.allow_growth = True
         self.SESS = tf.compat.v1.Session(config=cfg)
-        self.NN_TRAIN_CFG = {"epochs": 5, "initial_epochs": 35}
+        self.NN_TRAIN_CFG = {"epochs": 5}
         self.OPT_CFG = {
             "Random": {
                 "popsize": 2000
@@ -75,7 +75,7 @@ class SafetyPointGoal1ConfigModule:
                 "swarmsize":20,
                 "max_iters":10,
                 "beta":2,
-                "fmin": -1000,
+                "fmin": -1e10,
             }
         }
     def get_env(self):

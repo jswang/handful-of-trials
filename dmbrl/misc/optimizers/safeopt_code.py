@@ -78,11 +78,8 @@ class SafeOptimizer(Optimizer):
             def iteration(t, pt, var,maxi_sol,best_val, best_sol):
 
                 def step_safeopt(t,pt,cost,maxi_val,maxi_sol,best_val,best_sol):
-                    # print("---------------Step of Safeopt-------------")
-
                     #Convert to np
                     t_np=np.array(t)
-                    # print("Timestep in open loop plan:",t_np)
                     pt_np=np.array(pt)
                     cost_np=np.array(cost)
                     best_val=np.array(best_val)
@@ -93,10 +90,6 @@ class SafeOptimizer(Optimizer):
                     if maxi_val_np<best_val:
                         best_val=maxi_val_np
                         best_sol=maxi_sol_np
-                        # print("Update to best occured")
-                        print("Best Cost: {}".format(best_val))
-                    # print("Cost:{}".format(cost_np))
-                    # print("Best Cost: {}".format(best_val))
 
                     self.opt.add_new_data_point(pt_np,-cost_np)
                     new_pt,stddev=self.opt.get_new_query_point("expanders") # Returns point most likely to expand safe set
@@ -118,7 +111,6 @@ class SafeOptimizer(Optimizer):
                             if not name.startswith('_'):
                                 del locals()[name]
 
-                    # print("-----------Step Ended------------------")
                     return new_pt,maxi_sol2,best_sol,best_val
                 pt=tf.expand_dims(pt,axis=0)
                 maxi_sol=tf.expand_dims(maxi_sol,axis=0)
