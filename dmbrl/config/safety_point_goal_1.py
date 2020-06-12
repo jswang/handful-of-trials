@@ -24,7 +24,7 @@ class SafetyPointGoal1ConfigModule:
     # Inital rollouts to train the model with
     NINIT_ROLLOUTS = 1
     # MPC planning horizon
-    PLAN_HOR = 100 #TODO put back to 25?
+    PLAN_HOR = 25 #TODO put back to 25?
 
     NROLLOUTS_PER_ITER = 1
     GP_NINDUCING_POINTS = 200
